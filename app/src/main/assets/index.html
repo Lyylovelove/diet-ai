@@ -5,120 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>DietAI 饮食热量助手</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app" class="app-container">
-    <!-- 顶部状态栏区域 -->
-    <header class="header">
-      <div class="header-left">
-        <div class="app-logo">🥗</div>
-        <div>
-          <h1 class="app-title">DietAI</h1>
-          <p class="app-subtitle" id="current-date">今天</p>
-        </div>
-      </div>
-      <button id="btn-settings" class="icon-btn" title="设置 API Key">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
+
+    <!-- ====== 底部导航栏 ====== -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-page="home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>今日</span>
       </button>
-    </header>
+      <button class="nav-item" data-page="stats">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>统计</span>
+      </button>
+    </nav>
 
-    <!-- 卡路里进度卡片 (Cal AI 经典黑金/荧光绿设计) -->
-    <section class="calorie-summary-card">
-      <div class="ring-container">
-        <svg class="progress-ring" width="130" height="130">
-          <circle class="ring-bg" cx="65" cy="65" r="54" stroke-width="10" />
-          <circle class="ring-progress" id="calorie-ring" cx="65" cy="65" r="54" stroke-width="10" />
-        </svg>
-        <div class="ring-content">
-          <span class="consumed-cal" id="total-calories">0</span>
-          <span class="unit-text">千卡 / 已摄入</span>
-        </div>
-      </div>
-
-      <div class="calorie-info">
-        <div class="target-row">
-          <span class="label">每日目标</span>
-          <span class="value" id="target-calories">2000 kcal</span>
-        </div>
-        <div class="target-row">
-          <span class="label">还可摄入</span>
-          <span class="value highlight" id="remaining-calories">2000 kcal</span>
-        </div>
-
-        <!-- 三大营养素进度 -->
-        <div class="macro-list">
-          <div class="macro-item">
-            <div class="macro-meta">
-              <span class="macro-name">蛋白质</span>
-              <span class="macro-gram" id="protein-val">0g</span>
-            </div>
-            <div class="macro-bar"><div class="macro-fill protein" id="protein-bar" style="width: 0%"></div></div>
-          </div>
-          <div class="macro-item">
-            <div class="macro-meta">
-              <span class="macro-name">碳水</span>
-              <span class="macro-gram" id="carbs-val">0g</span>
-            </div>
-            <div class="macro-bar"><div class="macro-fill carbs" id="carbs-bar" style="width: 0%"></div></div>
-          </div>
-          <div class="macro-item">
-            <div class="macro-meta">
-              <span class="macro-name">脂肪</span>
-              <span class="macro-gram" id="fat-val">0g</span>
-            </div>
-            <div class="macro-bar"><div class="macro-fill fat" id="fat-bar" style="width: 0%"></div></div>
+    <!-- ====== 今日页面 ====== -->
+    <div id="page-home" class="page active-page">
+      <!-- 顶部 -->
+      <header class="header">
+        <div class="header-left">
+          <div class="app-logo">🥗</div>
+          <div>
+            <h1 class="app-title">DietAI</h1>
+            <p class="app-subtitle" id="current-date">今天</p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- 快捷拍照打卡区域 -->
-    <section class="action-banner">
-      <div class="banner-text">
-        <h3>拍照识别食物</h3>
-        <p>让 DeepSeek 视觉模型拆解热量与营养</p>
-      </div>
-      <div class="banner-buttons">
-        <label for="camera-input" class="btn-capture">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-            <circle cx="12" cy="13" r="4"></circle>
+        <button id="btn-settings" class="icon-btn" title="设置">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          拍照
-        </label>
-        <label for="gallery-input" class="btn-gallery">
-          相册
-        </label>
-        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
-        <input type="file" id="gallery-input" accept="image/*" style="display: none;" />
-      </div>
-    </section>
+        </button>
+      </header>
 
-    <!-- 今日餐次记录列表 -->
-    <section class="meals-section">
-      <div class="section-header">
-        <h2>今日饮食记录</h2>
-        <button id="btn-clear-today" class="text-btn">清空今日</button>
+      <!-- 卡路里圆环卡片 -->
+      <section class="calorie-summary-card">
+        <div class="ring-container">
+          <svg class="progress-ring" width="130" height="130">
+            <circle class="ring-bg" cx="65" cy="65" r="54" stroke-width="10" />
+            <circle class="ring-progress" id="calorie-ring" cx="65" cy="65" r="54" stroke-width="10" />
+          </svg>
+          <div class="ring-content">
+            <span class="consumed-cal" id="total-calories">0</span>
+            <span class="unit-text">千卡 / 已摄入</span>
+          </div>
+        </div>
+        <div class="calorie-info">
+          <div class="target-row">
+            <span class="label">每日目标</span>
+            <span class="value" id="target-calories">2000 kcal</span>
+          </div>
+          <div class="target-row">
+            <span class="label">还可摄入</span>
+            <span class="value highlight" id="remaining-calories">2000 kcal</span>
+          </div>
+          <div class="macro-list">
+            <div class="macro-item">
+              <div class="macro-meta"><span class="macro-name">蛋白质</span><span class="macro-gram" id="protein-val">0g</span></div>
+              <div class="macro-bar"><div class="macro-fill protein" id="protein-bar" style="width: 0%"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-meta"><span class="macro-name">碳水</span><span class="macro-gram" id="carbs-val">0g</span></div>
+              <div class="macro-bar"><div class="macro-fill carbs" id="carbs-bar" style="width: 0%"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-meta"><span class="macro-name">脂肪</span><span class="macro-gram" id="fat-val">0g</span></div>
+              <div class="macro-bar"><div class="macro-fill fat" id="fat-bar" style="width: 0%"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 拍照横幅 -->
+      <section class="action-banner">
+        <div class="banner-text">
+          <h3>拍照识别食物</h3>
+          <p>让 DeepSeek 视觉模型拆解热量与营养</p>
+        </div>
+        <div class="banner-buttons">
+          <label for="camera-input" class="btn-capture">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            拍照
+          </label>
+          <label for="gallery-input" class="btn-gallery">相册</label>
+          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
+          <input type="file" id="gallery-input" accept="image/*" style="display: none;" />
+        </div>
+      </section>
+
+      <!-- 今日餐次列表 -->
+      <section class="meals-section">
+        <div class="section-header">
+          <h2>今日饮食记录</h2>
+          <button id="btn-clear-today" class="text-btn">清空今日</button>
+        </div>
+        <div id="meals-list" class="meals-list">
+          <div class="empty-state" id="empty-state">
+            <span class="empty-icon">🍽️</span>
+            <p>今天还没有记录餐食哦</p>
+            <small>点击上方"拍照"开始智能分析吧</small>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====== 统计页面 ====== -->
+    <div id="page-stats" class="page">
+      <header class="header">
+        <div class="header-left">
+          <div class="app-logo">📊</div>
+          <div>
+            <h1 class="app-title">饮食统计</h1>
+            <p class="app-subtitle">全面回顾你的营养摄入</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- 日 / 周 / 月 切换 -->
+      <div class="stats-tab-bar">
+        <button class="stats-tab active" data-range="week">近 7 天</button>
+        <button class="stats-tab" data-range="month">近 30 天</button>
+        <button class="stats-tab" data-range="all">全部记录</button>
       </div>
 
-      <div id="meals-list" class="meals-list">
-        <!-- 动态渲染饮食卡片 -->
-        <div class="empty-state" id="empty-state">
-          <span class="empty-icon">🍽️</span>
-          <p>今天还没有记录餐食哦</p>
-          <small>点击上方“拍照”开始智能分析吧</small>
+      <!-- 汇总数字卡片 -->
+      <div class="stats-summary-row">
+        <div class="stat-card">
+          <span class="stat-label">平均每日</span>
+          <span class="stat-num" id="stat-avg-cal">--</span>
+          <span class="stat-unit">千卡</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">总摄入</span>
+          <span class="stat-num" id="stat-total-cal">--</span>
+          <span class="stat-unit">千卡</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">记录天数</span>
+          <span class="stat-num" id="stat-days">--</span>
+          <span class="stat-unit">天</span>
         </div>
       </div>
-    </section>
 
-    <!-- 识别中 Loading 弹窗 -->
+      <!-- 达标天数 -->
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <span>📅 达标情况</span>
+        </div>
+        <div class="stat-goal-row">
+          <div class="goal-item">
+            <span class="goal-num green" id="stat-on-target">--</span>
+            <span class="goal-label">达标天</span>
+          </div>
+          <div class="goal-divider"></div>
+          <div class="goal-item">
+            <span class="goal-num red" id="stat-over-target">--</span>
+            <span class="goal-label">超标天</span>
+          </div>
+          <div class="goal-divider"></div>
+          <div class="goal-item">
+            <span class="goal-num yellow" id="stat-under-target">--</span>
+            <span class="goal-label">不足天</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 峰值 / 最低 -->
+      <div class="stats-two-col">
+        <div class="stats-card half">
+          <div class="stats-card-header"><span>🔥 最高单日</span></div>
+          <div class="peak-num" id="stat-max-day">--</div>
+          <div class="peak-date" id="stat-max-date">--</div>
+        </div>
+        <div class="stats-card half">
+          <div class="stats-card-header"><span>❄️ 最低单日</span></div>
+          <div class="peak-num" id="stat-min-day">--</div>
+          <div class="peak-date" id="stat-min-date">--</div>
+        </div>
+      </div>
+
+      <!-- 平均营养素 -->
+      <div class="stats-card">
+        <div class="stats-card-header"><span>🧬 日均营养素</span></div>
+        <div class="avg-macros-grid">
+          <div class="avg-macro-item">
+            <div class="avg-dot protein"></div>
+            <span class="avg-label">蛋白质</span>
+            <span class="avg-val" id="stat-avg-protein">--g</span>
+          </div>
+          <div class="avg-macro-item">
+            <div class="avg-dot carbs"></div>
+            <span class="avg-label">碳水</span>
+            <span class="avg-val" id="stat-avg-carbs">--g</span>
+          </div>
+          <div class="avg-macro-item">
+            <div class="avg-dot fat"></div>
+            <span class="avg-label">脂肪</span>
+            <span class="avg-val" id="stat-avg-fat">--g</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 近期每日热量柱状图 -->
+      <div class="stats-card">
+        <div class="stats-card-header"><span>📈 每日热量趋势</span></div>
+        <div id="bar-chart" class="bar-chart-container"></div>
+      </div>
+
+      <!-- 餐次偏好分布 -->
+      <div class="stats-card">
+        <div class="stats-card-header"><span>🍱 餐次热量占比</span></div>
+        <div id="meal-type-stats" class="meal-type-stats"></div>
+      </div>
+    </div>
+
+    <!-- ====== 弹窗：Loading ====== -->
     <div id="loading-modal" class="modal-backdrop hidden">
       <div class="modal-card loading-card">
         <div class="spinner"></div>
@@ -127,52 +236,34 @@
       </div>
     </div>
 
-    <!-- 识别结果确认弹窗 -->
+    <!-- ====== 弹窗：识别结果 ====== -->
     <div id="result-modal" class="modal-backdrop hidden">
       <div class="modal-card result-card">
         <div class="modal-header">
           <h3 id="result-dish-name">菜品识别结果</h3>
           <button id="btn-close-result" class="close-btn">&times;</button>
         </div>
-
         <div class="result-body">
           <div class="preview-img-box">
             <img id="result-preview-img" src="" alt="食物照片" />
           </div>
-
           <div class="result-cal-hero">
             <span class="res-num" id="res-total-cal">0</span>
             <span class="res-unit">千卡 (kcal)</span>
           </div>
-
           <div class="result-macros-row">
-            <div class="r-macro">
-              <span class="r-title">蛋白质</span>
-              <span class="r-val" id="res-protein">0g</span>
-            </div>
-            <div class="r-macro">
-              <span class="r-title">碳水化合物</span>
-              <span class="r-val" id="res-carbs">0g</span>
-            </div>
-            <div class="r-macro">
-              <span class="r-title">脂肪</span>
-              <span class="r-val" id="res-fat">0g</span>
-            </div>
+            <div class="r-macro"><span class="r-title">蛋白质</span><span class="r-val" id="res-protein">0g</span></div>
+            <div class="r-macro"><span class="r-title">碳水化合物</span><span class="r-val" id="res-carbs">0g</span></div>
+            <div class="r-macro"><span class="r-title">脂肪</span><span class="r-val" id="res-fat">0g</span></div>
           </div>
-
-          <!-- 食材细分列表 -->
           <div class="ingredients-box">
             <h4>食材细分拆解</h4>
             <div id="ingredients-list" class="ingredients-list"></div>
           </div>
-
-          <!-- 健康小贴士 -->
           <div class="health-tip-box" id="health-tip-box">
             <span class="tip-icon">💡</span>
             <p id="health-tip-text">营养均衡，继续保持！</p>
           </div>
-
-          <!-- 餐次分类选择 -->
           <div class="meal-type-select">
             <label>归属餐次：</label>
             <select id="meal-type-picker">
@@ -183,14 +274,13 @@
             </select>
           </div>
         </div>
-
         <div class="modal-footer">
           <button id="btn-save-meal" class="primary-btn">确认记录到今日</button>
         </div>
       </div>
     </div>
 
-    <!-- 设置弹窗 -->
+    <!-- ====== 弹窗：设置 ====== -->
     <div id="settings-modal" class="modal-backdrop hidden">
       <div class="modal-card">
         <div class="modal-header">
@@ -203,18 +293,15 @@
             <input type="password" id="api-key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" />
             <small>Key 仅安全保存在手机本地，直接请求 DeepSeek 官方，绝不经过第三方服务器。</small>
           </div>
-
           <div class="form-group">
             <label for="api-base-input">API Base URL</label>
             <input type="text" id="api-base-input" value="https://api.deepseek.com" />
           </div>
-
           <div class="form-group">
             <label for="api-model-input">视觉模型名称</label>
             <input type="text" id="api-model-input" value="deepseek-flash" />
             <small>默认使用官方 deepseek-flash（支持中餐拍照识别）</small>
           </div>
-
           <div class="form-group">
             <label for="target-cal-input">每日热量目标 (kcal)</label>
             <input type="number" id="target-cal-input" value="2000" />
@@ -225,8 +312,8 @@
         </div>
       </div>
     </div>
-  </div>
 
+  </div>
   <script src="app.js"></script>
 </body>
 </html>
