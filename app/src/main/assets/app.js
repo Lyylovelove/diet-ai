@@ -1,5 +1,5 @@
 // ==========================================
-// DietAI - DeepSeek 智能饮食与卡路里记录逻辑
+// DietAI v2.0 - 饮食记录 + 日/周/月统计
 // ==========================================
 
 const DEFAULT_CONFIG = {
@@ -9,12 +9,12 @@ const DEFAULT_CONFIG = {
   targetCalories: 2000
 };
 
-// 状态管理
 let appConfig = { ...DEFAULT_CONFIG };
-let currentAnalyzedMeal = null; // 当前正在分析的餐食临时数据
-let mealsHistory = []; // 本地记录历史
+let currentAnalyzedMeal = null;
+let mealsHistory = [];
+let currentStatsRange = 'week'; // 'week' | 'month' | 'all'
 
-// DOM 元素引用
+// DOM refs
 const totalCalEl = document.getElementById('total-calories');
 const targetCalEl = document.getElementById('target-calories');
 const remainingCalEl = document.getElementById('remaining-calories');
@@ -26,32 +26,75 @@ const proteinBarEl = document.getElementById('protein-bar');
 const carbsBarEl = document.getElementById('carbs-bar');
 const fatBarEl = document.getElementById('fat-bar');
 const mealsListEl = document.getElementById('meals-list');
-const emptyStateEl = document.getElementById('empty-state');
 const currentDateEl = document.getElementById('current-date');
-
-// 弹窗元素
 const settingsModal = document.getElementById('settings-modal');
 const loadingModal = document.getElementById('loading-modal');
 const resultModal = document.getElementById('result-modal');
 
+// ==========================================
 // 初始化
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
   loadConfig();
   setupDate();
   loadMeals();
   renderDashboard();
   bindEvents();
+  renderStats();
 });
 
-// 加载配置
+// ==========================================
+// 页面导航
+// ==========================================
+function bindEvents() {
+  // 底部导航切换
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = btn.dataset.page;
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+      document.getElementById('page-' + page).classList.add('active-page');
+      if (page === 'stats') renderStats();
+    });
+  });
+
+  // 统计区间切换
+  document.querySelectorAll('.stats-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentStatsRange = tab.dataset.range;
+      renderStats();
+    });
+  });
+
+  // 设置按钮
+  document.getElementById('btn-settings').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+  document.getElementById('btn-close-settings').addEventListener('click', () => settingsModal.classList.add('hidden'));
+  document.getElementById('btn-save-settings').addEventListener('click', saveConfig);
+
+  // 拍照/相册
+  document.getElementById('camera-input').addEventListener('change', e => handleImageSelect(e.target.files[0]));
+  document.getElementById('gallery-input').addEventListener('change', e => handleImageSelect(e.target.files[0]));
+
+  // 结果弹窗
+  document.getElementById('btn-close-result').addEventListener('click', () => resultModal.classList.add('hidden'));
+  document.getElementById('btn-save-meal').addEventListener('click', saveCurrentMeal);
+
+  // 清空今日
+  document.getElementById('btn-clear-today').addEventListener('click', () => {
+    if (confirm('确定要清空今日的所有饮食记录吗？')) clearTodayMeals();
+  });
+}
+
+// ==========================================
+// 配置读写
+// ==========================================
 function loadConfig() {
   const saved = localStorage.getItem('diet_ai_config');
   if (saved) {
-    try {
-      appConfig = { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
-    } catch (e) {
-      console.error(e);
-    }
+    try { appConfig = { ...DEFAULT_CONFIG, ...JSON.parse(saved) }; } catch (e) {}
   }
   document.getElementById('api-key-input').value = appConfig.apiKey;
   document.getElementById('api-base-input').value = appConfig.baseUrl;
@@ -60,91 +103,49 @@ function loadConfig() {
   targetCalEl.textContent = `${appConfig.targetCalories} kcal`;
 }
 
-// 保存配置
 function saveConfig() {
   appConfig.apiKey = document.getElementById('api-key-input').value.trim();
   appConfig.baseUrl = document.getElementById('api-base-input').value.trim() || 'https://api.deepseek.com';
   appConfig.model = document.getElementById('api-model-input').value.trim() || 'deepseek-flash';
   appConfig.targetCalories = parseInt(document.getElementById('target-cal-input').value) || 2000;
-
   localStorage.setItem('diet_ai_config', JSON.stringify(appConfig));
   targetCalEl.textContent = `${appConfig.targetCalories} kcal`;
   renderDashboard();
+  renderStats();
   settingsModal.classList.add('hidden');
-  alert('设置已保存！');
 }
 
-// 设置日期展示
 function setupDate() {
   const now = new Date();
-  const options = { month: 'long', day: 'numeric', weekday: 'short' };
-  currentDateEl.textContent = now.toLocaleDateString('zh-CN', options);
+  currentDateEl.textContent = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
 }
 
-// 绑定事件
-function bindEvents() {
-  // 设置按钮
-  document.getElementById('btn-settings').addEventListener('click', () => {
-    settingsModal.classList.remove('hidden');
-  });
-  document.getElementById('btn-close-settings').addEventListener('click', () => {
-    settingsModal.classList.add('hidden');
-  });
-  document.getElementById('btn-save-settings').addEventListener('click', saveConfig);
-
-  // 拍照与相册选择
-  const cameraInput = document.getElementById('camera-input');
-  const galleryInput = document.getElementById('gallery-input');
-
-  cameraInput.addEventListener('change', (e) => handleImageSelect(e.target.files[0]));
-  galleryInput.addEventListener('change', (e) => handleImageSelect(e.target.files[0]));
-
-  // 结果弹窗关闭与保存
-  document.getElementById('btn-close-result').addEventListener('click', () => {
-    resultModal.classList.add('hidden');
-  });
-  document.getElementById('btn-save-meal').addEventListener('click', saveCurrentMeal);
-
-  // 清空今日
-  document.getElementById('btn-clear-today').addEventListener('click', () => {
-    if (confirm('确定要清空今日的所有饮食记录吗？')) {
-      clearTodayMeals();
-    }
-  });
-}
-
-// 处理图片选择
+// ==========================================
+// 图片识别
+// ==========================================
 async function handleImageSelect(file) {
   if (!file) return;
-
   if (!appConfig.apiKey) {
     alert('请先在右上角【设置】中输入你的 DeepSeek API Key！');
     settingsModal.classList.remove('hidden');
     return;
   }
-
   try {
     loadingModal.classList.remove('hidden');
-    // 压缩图片并转为 Base64（避免大图上传卡顿和浪费 token）
     const base64Data = await compressImageToBase64(file, 1024, 0.85);
-
-    // 调用 DeepSeek 视觉模型解析
     const result = await analyzeMealWithDeepSeek(base64Data);
-
     loadingModal.classList.add('hidden');
     showResultModal(result, base64Data);
   } catch (err) {
     loadingModal.classList.add('hidden');
-    alert('识别失败: ' + (err.message || '请检查网络或 API Key 是否正确'));
+    alert('识别失败: ' + (err.message || '请检查网络或 API Key'));
     console.error(err);
   } finally {
-    // 重置 input 允许重复选同一张图
     document.getElementById('camera-input').value = '';
     document.getElementById('gallery-input').value = '';
   }
 }
 
-// 图片压缩为 Base64
 function compressImageToBase64(file, maxWidth = 1024, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -152,26 +153,14 @@ function compressImageToBase64(file, maxWidth = 1024, quality = 0.85) {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
+        let { width, height } = img;
         if (width > maxWidth || height > maxWidth) {
-          if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else {
-            width = Math.round((width * maxWidth) / height);
-            height = maxWidth;
-          }
+          if (width > height) { height = Math.round(height * maxWidth / width); width = maxWidth; }
+          else { width = Math.round(width * maxWidth / height); height = maxWidth; }
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(dataUrl);
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = reject;
       img.src = event.target.result;
@@ -181,79 +170,46 @@ function compressImageToBase64(file, maxWidth = 1024, quality = 0.85) {
   });
 }
 
-// 调用 DeepSeek 视觉模型接口
 async function analyzeMealWithDeepSeek(base64Image) {
-  const prompt = `你是一个资深的专业营养师和食物热量分析专家。请仔细观察这张食物照片（特别对中餐、常见中式家常菜、米饭面条、快餐等有精准认知）。
-请估算食物分量，拆解食材成分并计算营养。
-
-你必须严格以 JSON 格式输出，不要包含任何额外的 Markdown 解释文字或 \`\`\`json 标记。
-JSON 格式要求如下：
+  const prompt = `你是专业营养师，请仔细分析这张食物照片（对中餐有精准认知），估算分量并拆解营养。
+严格以 JSON 格式输出，不含任何 Markdown 标记：
 {
-  "dish_name": "菜品名称（如：西红柿鸡蛋盖浇饭）",
+  "dish_name": "菜品名称",
   "total_calories": 580,
   "protein": 22.5,
   "carbs": 82.0,
   "fat": 18.0,
   "ingredients": [
-    {"name": "熟米饭", "weight": "220g", "calories": 255},
-    {"name": "炒鸡蛋", "weight": "100g (约2个)", "calories": 150},
-    {"name": "番茄", "weight": "120g", "calories": 25},
-    {"name": "烹调油", "weight": "16g", "calories": 150}
+    {"name": "熟米饭", "weight": "220g", "calories": 255}
   ],
-  "health_tip": "蛋白质摄入良好，主食偏多，建议搭配少油绿叶蔬菜以补充膳食纤维。"
+  "health_tip": "营养建议"
 }`;
 
-  let endpoint = appConfig.baseUrl.replace(/\/+$/, '') + '/chat/completions';
-
-  const payload = {
-    model: appConfig.model || 'deepseek-flash',
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          {
-            type: 'image_url',
-            image_url: { url: base64Image }
-          }
-        ]
-      }
-    ],
-    temperature: 0.3
-  };
-
+  const endpoint = appConfig.baseUrl.replace(/\/+$/, '') + '/chat/completions';
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${appConfig.apiKey}`
-    },
-    body: JSON.stringify(payload)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${appConfig.apiKey}` },
+    body: JSON.stringify({
+      model: appConfig.model || 'deepseek-flash',
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: base64Image } }
+      ]}],
+      temperature: 0.3
+    })
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`API 报错 (${response.status}): ${errText}`);
-  }
-
+  if (!response.ok) throw new Error(`API 报错 (${response.status}): ${await response.text()}`);
   const data = await response.json();
-  const rawContent = data.choices[0]?.message?.content || '{}';
-
-  // 清洗可能存在的 Markdown 代码块标记
-  let cleanJson = rawContent.trim();
-  if (cleanJson.startsWith('```json')) {
-    cleanJson = cleanJson.substring(7);
-  } else if (cleanJson.startsWith('```')) {
-    cleanJson = cleanJson.substring(3);
-  }
-  if (cleanJson.endsWith('```')) {
-    cleanJson = cleanJson.substring(0, cleanJson.length - 3);
-  }
-
-  return JSON.parse(cleanJson.trim());
+  let raw = (data.choices[0]?.message?.content || '{}').trim();
+  if (raw.startsWith('```json')) raw = raw.substring(7);
+  else if (raw.startsWith('```')) raw = raw.substring(3);
+  if (raw.endsWith('```')) raw = raw.substring(0, raw.length - 3);
+  return JSON.parse(raw.trim());
 }
 
-// 显示识别结果弹窗
+// ==========================================
+// 结果弹窗
+// ==========================================
 function showResultModal(result, imageSrc) {
   currentAnalyzedMeal = {
     id: Date.now(),
@@ -277,86 +233,65 @@ function showResultModal(result, imageSrc) {
   document.getElementById('res-fat').textContent = currentAnalyzedMeal.fat + 'g';
   document.getElementById('health-tip-text').textContent = currentAnalyzedMeal.healthTip;
 
-  // 渲染食材列表
   const ingListEl = document.getElementById('ingredients-list');
   ingListEl.innerHTML = '';
   currentAnalyzedMeal.ingredients.forEach(ing => {
     const div = document.createElement('div');
     div.className = 'ing-row';
-    div.innerHTML = `
-      <span class="ing-name">${ing.name} <small style="color:#8E9BAE">(${ing.weight})</small></span>
-      <span class="ing-cal">${ing.calories} kcal</span>
-    `;
+    div.innerHTML = `<span class="ing-name">${ing.name} <small style="color:#8E9BAE">(${ing.weight})</small></span><span class="ing-cal">${ing.calories} kcal</span>`;
     ingListEl.appendChild(div);
   });
 
-  // 智能推测默认餐次
-  const currentHour = new Date().getHours();
+  const hour = new Date().getHours();
   const picker = document.getElementById('meal-type-picker');
-  if (currentHour < 10) picker.value = '早餐';
-  else if (currentHour < 15) picker.value = '午餐';
-  else if (currentHour < 21) picker.value = '晚餐';
+  if (hour < 10) picker.value = '早餐';
+  else if (hour < 15) picker.value = '午餐';
+  else if (hour < 21) picker.value = '晚餐';
   else picker.value = '加餐/零食';
 
   resultModal.classList.remove('hidden');
 }
 
-// 确认保存当前餐食
 function saveCurrentMeal() {
   if (!currentAnalyzedMeal) return;
-
   currentAnalyzedMeal.type = document.getElementById('meal-type-picker').value;
   mealsHistory.unshift(currentAnalyzedMeal);
   persistMeals();
   renderDashboard();
-
   resultModal.classList.add('hidden');
   currentAnalyzedMeal = null;
 }
 
-// 渲染面板数据与列表
+// ==========================================
+// 今日看板渲染
+// ==========================================
 function renderDashboard() {
   const todayStr = getTodayStr();
   const todayMeals = mealsHistory.filter(m => m.date === todayStr);
-
-  let totalCal = 0;
-  let totalProtein = 0;
-  let totalCarbs = 0;
-  let totalFat = 0;
-
+  let totalCal = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
   todayMeals.forEach(m => {
-    totalCal += m.calories;
-    totalProtein += m.protein;
-    totalCarbs += m.carbs;
-    totalFat += m.fat;
+    totalCal += m.calories; totalProtein += m.protein; totalCarbs += m.carbs; totalFat += m.fat;
   });
 
   totalCalEl.textContent = totalCal;
-  const remaining = appConfig.targetCalories - totalCal;
-  remainingCalEl.textContent = (remaining >= 0 ? remaining : 0) + ' kcal';
+  remainingCalEl.textContent = Math.max(0, appConfig.targetCalories - totalCal) + ' kcal';
 
-  // 卡路里进度圆环
-  const target = appConfig.targetCalories || 2000;
-  const pct = Math.min(1, Math.max(0, totalCal / target));
-  const circumference = 2 * Math.PI * 54; // r=54 -> ~339.29
-  const offset = circumference - (pct * circumference);
-  calorieRingEl.style.strokeDashoffset = offset;
+  const pct = Math.min(1, Math.max(0, totalCal / appConfig.targetCalories));
+  const circumference = 2 * Math.PI * 54;
+  calorieRingEl.style.strokeDashoffset = circumference - pct * circumference;
 
-  // 三大宏量
   proteinValEl.textContent = totalProtein + 'g';
   carbsValEl.textContent = totalCarbs + 'g';
   fatValEl.textContent = totalFat + 'g';
+  proteinBarEl.style.width = Math.min(100, totalProtein / 100 * 100) + '%';
+  carbsBarEl.style.width = Math.min(100, totalCarbs / 250 * 100) + '%';
+  fatBarEl.style.width = Math.min(100, totalFat / 60 * 100) + '%';
 
-  // 宏量百分比条（按常见健康参考值：蛋白质100g、碳水250g、脂肪60g）
-  proteinBarEl.style.width = Math.min(100, (totalProtein / 100) * 100) + '%';
-  carbsBarEl.style.width = Math.min(100, (totalCarbs / 250) * 100) + '%';
-  fatBarEl.style.width = Math.min(100, (totalFat / 60) * 100) + '%';
-
-  // 渲染列表
   mealsListEl.innerHTML = '';
   if (todayMeals.length === 0) {
-    emptyStateEl.style.display = 'block';
-    mealsListEl.appendChild(emptyStateEl);
+    const es = document.getElementById('empty-state');
+    es.style.display = 'block';
+    mealsListEl.appendChild(es);
   } else {
     todayMeals.forEach(meal => {
       const card = document.createElement('div');
@@ -375,55 +310,195 @@ function renderDashboard() {
             <span>脂 ${meal.fat}g</span>
           </div>
         </div>
-        <button class="meal-del-btn" data-id="${meal.id}" title="删除记录">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>
-      `;
-
-      card.querySelector('.meal-del-btn').addEventListener('click', (e) => {
-        deleteMeal(meal.id);
-      });
-
+        <button class="meal-del-btn" data-id="${meal.id}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>`;
+      card.querySelector('.meal-del-btn').addEventListener('click', () => deleteMeal(meal.id));
       mealsListEl.appendChild(card);
     });
   }
 }
 
-// 删除单条餐食
+// ==========================================
+// 统计页面渲染
+// ==========================================
+function renderStats() {
+  const meals = getFilteredMeals();
+
+  // 按日期分组
+  const byDate = {};
+  meals.forEach(m => {
+    if (!byDate[m.date]) byDate[m.date] = { calories: 0, protein: 0, carbs: 0, fat: 0, count: 0 };
+    byDate[m.date].calories += m.calories;
+    byDate[m.date].protein += m.protein;
+    byDate[m.date].carbs += m.carbs;
+    byDate[m.date].fat += m.fat;
+    byDate[m.date].count++;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const numDays = dates.length;
+
+  if (numDays === 0) {
+    document.getElementById('stat-avg-cal').textContent = '--';
+    document.getElementById('stat-total-cal').textContent = '--';
+    document.getElementById('stat-days').textContent = '0';
+    document.getElementById('stat-on-target').textContent = '--';
+    document.getElementById('stat-over-target').textContent = '--';
+    document.getElementById('stat-under-target').textContent = '--';
+    document.getElementById('stat-max-day').textContent = '--';
+    document.getElementById('stat-max-date').textContent = '暂无数据';
+    document.getElementById('stat-min-day').textContent = '--';
+    document.getElementById('stat-min-date').textContent = '暂无数据';
+    document.getElementById('stat-avg-protein').textContent = '--g';
+    document.getElementById('stat-avg-carbs').textContent = '--g';
+    document.getElementById('stat-avg-fat').textContent = '--g';
+    document.getElementById('bar-chart').innerHTML = '<div class="no-data-tip">还没有记录，快去拍照吧！</div>';
+    document.getElementById('meal-type-stats').innerHTML = '';
+    return;
+  }
+
+  const totalCal = dates.reduce((s, d) => s + byDate[d].calories, 0);
+  const avgCal = Math.round(totalCal / numDays);
+  const target = appConfig.targetCalories;
+
+  const onTarget = dates.filter(d => byDate[d].calories >= target * 0.8 && byDate[d].calories <= target * 1.15).length;
+  const overTarget = dates.filter(d => byDate[d].calories > target * 1.15).length;
+  const underTarget = dates.filter(d => byDate[d].calories < target * 0.8).length;
+
+  const calsByDay = dates.map(d => ({ date: d, cal: byDate[d].calories }));
+  const maxEntry = calsByDay.reduce((a, b) => a.cal >= b.cal ? a : b);
+  const minEntry = calsByDay.reduce((a, b) => a.cal <= b.cal ? a : b);
+
+  const avgProtein = Math.round(dates.reduce((s, d) => s + byDate[d].protein, 0) / numDays);
+  const avgCarbs = Math.round(dates.reduce((s, d) => s + byDate[d].carbs, 0) / numDays);
+  const avgFat = Math.round(dates.reduce((s, d) => s + byDate[d].fat, 0) / numDays);
+
+  // 写入 DOM
+  document.getElementById('stat-avg-cal').textContent = avgCal;
+  document.getElementById('stat-total-cal').textContent = Math.round(totalCal);
+  document.getElementById('stat-days').textContent = numDays;
+  document.getElementById('stat-on-target').textContent = onTarget;
+  document.getElementById('stat-over-target').textContent = overTarget;
+  document.getElementById('stat-under-target').textContent = underTarget;
+  document.getElementById('stat-max-day').textContent = maxEntry.cal + ' kcal';
+  document.getElementById('stat-max-date').textContent = formatDateLabel(maxEntry.date);
+  document.getElementById('stat-min-day').textContent = minEntry.cal + ' kcal';
+  document.getElementById('stat-min-date').textContent = formatDateLabel(minEntry.date);
+  document.getElementById('stat-avg-protein').textContent = avgProtein + 'g';
+  document.getElementById('stat-avg-carbs').textContent = avgCarbs + 'g';
+  document.getElementById('stat-avg-fat').textContent = avgFat + 'g';
+
+  renderBarChart(dates, byDate, target);
+  renderMealTypeStats(meals);
+}
+
+// 柱状图（纯 CSS + HTML，不依赖第三方库）
+function renderBarChart(dates, byDate, target) {
+  const container = document.getElementById('bar-chart');
+  const showDates = dates.slice(-14); // 最多展示14天
+  const maxCal = Math.max(target * 1.3, ...showDates.map(d => byDate[d].calories));
+
+  container.innerHTML = `
+    <div class="bar-chart-wrap">
+      ${showDates.map(d => {
+        const cal = byDate[d].calories;
+        const pct = Math.min(100, (cal / maxCal) * 100);
+        const isOver = cal > target * 1.15;
+        const isUnder = cal < target * 0.8;
+        const color = isOver ? 'var(--macro-fat)' : isUnder ? 'var(--macro-carbs)' : 'var(--primary)';
+        return `
+          <div class="bar-item">
+            <div class="bar-val">${cal >= 1000 ? (cal/1000).toFixed(1)+'k' : cal}</div>
+            <div class="bar-col-wrap">
+              <div class="bar-col" style="height:${pct}%;background:${color}"></div>
+            </div>
+            <div class="bar-label">${formatShortDate(d)}</div>
+          </div>`;
+      }).join('')}
+    </div>
+    <div class="bar-legend">
+      <span class="legend-dot" style="background:var(--primary)"></span><span>达标</span>
+      <span class="legend-dot" style="background:var(--macro-fat)"></span><span>超标</span>
+      <span class="legend-dot" style="background:var(--macro-carbs)"></span><span>不足</span>
+    </div>`;
+}
+
+// 餐次分布统计
+function renderMealTypeStats(meals) {
+  const container = document.getElementById('meal-type-stats');
+  const types = {};
+  meals.forEach(m => {
+    if (!types[m.type]) types[m.type] = { calories: 0, count: 0 };
+    types[m.type].calories += m.calories;
+    types[m.type].count++;
+  });
+  const totalCal = meals.reduce((s, m) => s + m.calories, 0);
+  const typeColors = { '早餐': '#3B82F6', '午餐': '#10B981', '晚餐': '#F59E0B', '加餐/零食': '#EF4444' };
+
+  container.innerHTML = Object.entries(types).map(([type, data]) => {
+    const pct = totalCal > 0 ? Math.round(data.calories / totalCal * 100) : 0;
+    const color = typeColors[type] || '#8E9BAE';
+    return `
+      <div class="meal-type-row">
+        <div class="mt-left">
+          <span class="mt-dot" style="background:${color}"></span>
+          <span class="mt-name">${type}</span>
+          <span class="mt-count">(${data.count} 次)</span>
+        </div>
+        <div class="mt-right">
+          <div class="mt-bar-wrap">
+            <div class="mt-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span class="mt-pct">${pct}%</span>
+        </div>
+      </div>`;
+  }).join('') || '<div class="no-data-tip">暂无数据</div>';
+}
+
+// 根据时间范围过滤记录
+function getFilteredMeals() {
+  const now = new Date();
+  if (currentStatsRange === 'all') return mealsHistory;
+  const days = currentStatsRange === 'week' ? 7 : 30;
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days + 1);
+  const cutoffStr = dateToStr(cutoff);
+  return mealsHistory.filter(m => m.date >= cutoffStr);
+}
+
+// ==========================================
+// 工具函数
+// ==========================================
 function deleteMeal(id) {
   mealsHistory = mealsHistory.filter(m => m.id !== id);
-  persistMeals();
-  renderDashboard();
+  persistMeals(); renderDashboard();
 }
 
-// 清空今日
 function clearTodayMeals() {
-  const todayStr = getTodayStr();
-  mealsHistory = mealsHistory.filter(m => m.date !== todayStr);
-  persistMeals();
-  renderDashboard();
+  mealsHistory = mealsHistory.filter(m => m.date !== getTodayStr());
+  persistMeals(); renderDashboard();
 }
 
-// 本地存储
-function persistMeals() {
-  localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory));
-}
+function persistMeals() { localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory)); }
 
 function loadMeals() {
   const saved = localStorage.getItem('diet_ai_meals');
-  if (saved) {
-    try {
-      mealsHistory = JSON.parse(saved);
-    } catch (e) {
-      mealsHistory = [];
-    }
-  }
+  if (saved) { try { mealsHistory = JSON.parse(saved); } catch (e) { mealsHistory = []; } }
 }
 
-function getTodayStr() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+function getTodayStr() { return dateToStr(new Date()); }
+
+function dateToStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatDateLabel(str) {
+  if (!str) return '--';
+  const [y, m, d] = str.split('-');
+  return `${parseInt(m)}月${parseInt(d)}日`;
+}
+
+function formatShortDate(str) {
+  const [, m, d] = str.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
 }
