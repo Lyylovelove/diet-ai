@@ -23,21 +23,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.2.1
+          gradle-version: '8.2.1'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          gradle assembleDebug --stacktrace
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Rename APK for release
         run: |
           mkdir -p release-output
-          cp app/build/outputs/apk/debug/app-debug.apk release-output/DietAI.apk
+          cp app/build/outputs/apk/debug/*.apk release-output/DietAI.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
