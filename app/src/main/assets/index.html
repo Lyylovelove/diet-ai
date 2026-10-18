@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>DietAI 饮食热量助手</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- 顶部状态栏区域 -->
+    <header class="header">
+      <div class="header-left">
+        <div class="app-logo">🥗</div>
+        <div>
+          <h1 class="app-title">DietAI</h1>
+          <p class="app-subtitle" id="current-date">今天</p>
+        </div>
+      </div>
+      <button id="btn-settings" class="icon-btn" title="设置 API Key">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- 卡路里进度卡片 (Cal AI 经典黑金/荧光绿设计) -->
+    <section class="calorie-summary-card">
+      <div class="ring-container">
+        <svg class="progress-ring" width="130" height="130">
+          <circle class="ring-bg" cx="65" cy="65" r="54" stroke-width="10" />
+          <circle class="ring-progress" id="calorie-ring" cx="65" cy="65" r="54" stroke-width="10" />
+        </svg>
+        <div class="ring-content">
+          <span class="consumed-cal" id="total-calories">0</span>
+          <span class="unit-text">千卡 / 已摄入</span>
+        </div>
+      </div>
+
+      <div class="calorie-info">
+        <div class="target-row">
+          <span class="label">每日目标</span>
+          <span class="value" id="target-calories">2000 kcal</span>
+        </div>
+        <div class="target-row">
+          <span class="label">还可摄入</span>
+          <span class="value highlight" id="remaining-calories">2000 kcal</span>
+        </div>
+
+        <!-- 三大营养素进度 -->
+        <div class="macro-list">
+          <div class="macro-item">
+            <div class="macro-meta">
+              <span class="macro-name">蛋白质</span>
+              <span class="macro-gram" id="protein-val">0g</span>
+            </div>
+            <div class="macro-bar"><div class="macro-fill protein" id="protein-bar" style="width: 0%"></div></div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-meta">
+              <span class="macro-name">碳水</span>
+              <span class="macro-gram" id="carbs-val">0g</span>
+            </div>
+            <div class="macro-bar"><div class="macro-fill carbs" id="carbs-bar" style="width: 0%"></div></div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-meta">
+              <span class="macro-name">脂肪</span>
+              <span class="macro-gram" id="fat-val">0g</span>
+            </div>
+            <div class="macro-bar"><div class="macro-fill fat" id="fat-bar" style="width: 0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 快捷拍照打卡区域 -->
+    <section class="action-banner">
+      <div class="banner-text">
+        <h3>拍照识别食物</h3>
+        <p>让 DeepSeek 视觉模型拆解热量与营养</p>
+      </div>
+      <div class="banner-buttons">
+        <label for="camera-input" class="btn-capture">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          拍照
+        </label>
+        <label for="gallery-input" class="btn-gallery">
+          相册
+        </label>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" />
+        <input type="file" id="gallery-input" accept="image/*" style="display: none;" />
+      </div>
+    </section>
+
+    <!-- 今日餐次记录列表 -->
+    <section class="meals-section">
+      <div class="section-header">
+        <h2>今日饮食记录</h2>
+        <button id="btn-clear-today" class="text-btn">清空今日</button>
+      </div>
+
+      <div id="meals-list" class="meals-list">
+        <!-- 动态渲染饮食卡片 -->
+        <div class="empty-state" id="empty-state">
+          <span class="empty-icon">🍽️</span>
+          <p>今天还没有记录餐食哦</p>
+          <small>点击上方“拍照”开始智能分析吧</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- 识别中 Loading 弹窗 -->
+    <div id="loading-modal" class="modal-backdrop hidden">
+      <div class="modal-card loading-card">
+        <div class="spinner"></div>
+        <h3>DeepSeek 正在拆解食物...</h3>
+        <p id="loading-tip">正在分析盘中食材分量与营养成分</p>
+      </div>
+    </div>
+
+    <!-- 识别结果确认弹窗 -->
+    <div id="result-modal" class="modal-backdrop hidden">
+      <div class="modal-card result-card">
+        <div class="modal-header">
+          <h3 id="result-dish-name">菜品识别结果</h3>
+          <button id="btn-close-result" class="close-btn">&times;</button>
+        </div>
+
+        <div class="result-body">
+          <div class="preview-img-box">
+            <img id="result-preview-img" src="" alt="食物照片" />
+          </div>
+
+          <div class="result-cal-hero">
+            <span class="res-num" id="res-total-cal">0</span>
+            <span class="res-unit">千卡 (kcal)</span>
+          </div>
+
+          <div class="result-macros-row">
+            <div class="r-macro">
+              <span class="r-title">蛋白质</span>
+              <span class="r-val" id="res-protein">0g</span>
+            </div>
+            <div class="r-macro">
+              <span class="r-title">碳水化合物</span>
+              <span class="r-val" id="res-carbs">0g</span>
+            </div>
+            <div class="r-macro">
+              <span class="r-title">脂肪</span>
+              <span class="r-val" id="res-fat">0g</span>
+            </div>
+          </div>
+
+          <!-- 食材细分列表 -->
+          <div class="ingredients-box">
+            <h4>食材细分拆解</h4>
+            <div id="ingredients-list" class="ingredients-list"></div>
+          </div>
+
+          <!-- 健康小贴士 -->
+          <div class="health-tip-box" id="health-tip-box">
+            <span class="tip-icon">💡</span>
+            <p id="health-tip-text">营养均衡，继续保持！</p>
+          </div>
+
+          <!-- 餐次分类选择 -->
+          <div class="meal-type-select">
+            <label>归属餐次：</label>
+            <select id="meal-type-picker">
+              <option value="午餐">午餐</option>
+              <option value="早餐">早餐</option>
+              <option value="晚餐">晚餐</option>
+              <option value="加餐/零食">加餐 / 零食</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-save-meal" class="primary-btn">确认记录到今日</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>设置 API 与目标</h3>
+          <button id="btn-close-settings" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body form-body">
+          <div class="form-group">
+            <label for="api-key-input">DeepSeek API Key <span class="required">*</span></label>
+            <input type="password" id="api-key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" />
+            <small>Key 仅安全保存在手机本地，直接请求 DeepSeek 官方，绝不经过第三方服务器。</small>
+          </div>
+
+          <div class="form-group">
+            <label for="api-base-input">API Base URL</label>
+            <input type="text" id="api-base-input" value="https://api.deepseek.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="api-model-input">视觉模型名称</label>
+            <input type="text" id="api-model-input" value="deepseek-flash" />
+            <small>默认使用官方 deepseek-flash（支持中餐拍照识别）</small>
+          </div>
+
+          <div class="form-group">
+            <label for="target-cal-input">每日热量目标 (kcal)</label>
+            <input type="number" id="target-cal-input" value="2000" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-save-settings" class="primary-btn">保存设置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
