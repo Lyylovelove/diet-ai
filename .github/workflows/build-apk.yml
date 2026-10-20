@@ -50,13 +50,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: DietAI Android v1.0.0
+          tag_name: v1.0.1
+          name: DietAI Android v1.0.1
           body: |
             ### 🥗 DietAI 饮食卡路里助手安装包
             
             - **文件名**：`DietAI.apk`
-            - **功能**：DeepSeek 拍照识菜、中餐热量估算、宏量营养素统计、离线数据记录
+            - **功能**：DeepSeek 拍照识菜、中餐热量估算、宏量营养素统计、日/周/月统计分析、离线数据记录
             - **使用方式**：下载后发到安卓手机上直接安装即可！
           files: release-output/DietAI.apk
         env:
