@@ -36,20 +36,25 @@ function calcGoals(gender, age, height, weight, goal, activity) {
   age = age > 0 ? age : 30;
   var bmr = 10 * weight + 6.25 * height - 5 * age + (gender === 'female' ? -161 : 5);
   var tdee = bmr * (activity > 0 ? activity : 1.375);
-  var factor = goal === 'cut' ? 0.8 : goal === 'bulk' ? 1.1 : 1.0;
-  var kcal = tdee * factor;
+
+  // 营养素按“每公斤体重”的常见经验值计算（BMI>28 时按 BMI 28 对应体重，避免体重大的人数值虚高）
+  var hm = height / 100;
+  var basis = Math.min(weight, 28 * hm * hm);
+  var proteinPerKg = goal === 'maintain' ? 1.8 : 2.0;
+  var carbPerKg = goal === 'cut' ? 2.5 : goal === 'bulk' ? 4.5 : 3.5;
+  if (activity >= 1.7) carbPerKg += 0.5;
+  else if (activity > 0 && activity <= 1.2) carbPerKg -= 0.5;
+  var fatPerKg = goal === 'cut' ? 0.8 : 0.9;
+
+  var protein = Math.round(basis * proteinPerKg);
+  var carbs = Math.round(basis * carbPerKg);
+  var fat = Math.round(basis * fatPerKg);
+  var kcal = protein * 4 + carbs * 4 + fat * 9;
   var floor = gender === 'female' ? 1200 : 1500;
-  if (kcal < floor) kcal = floor;
+  if (kcal < floor) { carbs += Math.ceil((floor - kcal) / 4); kcal = protein * 4 + carbs * 4 + fat * 9; }
   kcal = Math.round(kcal / 10) * 10;
-  var perKg = goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.2;
-  var protein = Math.round(weight * perKg);
-  var fatPct = goal === 'maintain' ? 0.28 : 0.25;
-  var fat = Math.round(kcal * fatPct / 9);
-  var carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
-  if (carbs < 50) carbs = 50;
   return { calories: kcal, protein: protein, carbs: carbs, fat: fat, bmr: Math.round(bmr), tdee: Math.round(tdee) };
 }
-
 // 手动微调蛋白质/碳水/脂肪时，热量目标 = 蛋白质×4 + 碳水×4 + 脂肪×9 自动联动
 function syncCalFromMacros() {
   var p = parseFloat(document.getElementById('target-protein-input').value) || 0;
@@ -76,7 +81,7 @@ function applyCalc() {
   document.getElementById('target-fat-input').value = g.fat;
   var box = document.getElementById('calc-result');
   box.style.display = 'block';
-  box.textContent = '基础代谢约 ' + g.bmr + ' kcal，日常消耗约 ' + g.tdee + ' kcal。目标「' + goalName(goal) + '」→ 每日 ' + g.calories + ' kcal，蛋白质 ' + g.protein + 'g，碳水 ' + g.carbs + 'g，脂肪 ' + g.fat + 'g（可手动微调后保存）';
+  box.textContent = '基础代谢约 ' + g.bmr + ' kcal，日常消耗约 ' + g.tdee + ' kcal。目标「' + goalName(goal) + '」→ 每日 ' + g.calories + ' kcal（比日常消耗' + (g.calories >= g.tdee ? '多' : '少') + Math.abs(g.calories - g.tdee) + '），蛋白质 ' + g.protein + 'g，碳水 ' + g.carbs + 'g，脂肪 ' + g.fat + 'g（可手动微调后保存）';
   toast('已计算推荐目标，确认后点保存');
 }
 var mealsHistory = [];
