@@ -10,8 +10,8 @@ android {
         applicationId "com.dietai.app"
         minSdk 24
         targetSdk 34
-        versionCode 9
-        versionName "9.0"
+        versionCode 10
+        versionName "10.0"
     }
 
     buildTypes {
@@ -20,7 +20,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            applicationIdSuffix ".v9"
+            applicationIdSuffix ".v10"
             debuggable true
         }
     }
