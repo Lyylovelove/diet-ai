@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="toast" style="display:none;position:fixed;left:16px;right:16px;top:40px;z-index:99999;background:#10B981;color:#04140d;padding:14px 16px;border-radius:12px;font-size:15px;font-weight:600;text-align:center;word-break:break-all"></div>
   <div id="app">
 
     <!-- ====== 底部导航 ====== -->
@@ -179,7 +180,7 @@
     <div id="modal-settings" class="modal-overlay" style="display:none">
       <div class="modal-sheet">
         <div class="modal-header">
-          <h3 id="settings-title">⚙️ 配置 DeepSeek API</h3>
+          <div style="font-size:11px;color:#8E9BAE">版本 v4.0</div><h3 id="settings-title">⚙️ 配置 DeepSeek API</h3>
           <button class="close-btn" onclick="closeSettings()">✕</button>
         </div>
         <p id="settings-hint" class="settings-hint">请填入你的 DeepSeek API Key，保存后即可拍照识别食物</p>
@@ -195,7 +196,7 @@
           </div>
           <div class="form-group">
             <label>视觉模型（默认即可）</label>
-            <input type="text" id="api-model-input" value="deepseek-chat" />
+            <input type="text" id="api-model-input" value="deepseek-flash" />
           </div>
           <div class="form-group">
             <label>每日热量目标 (kcal)</label>
