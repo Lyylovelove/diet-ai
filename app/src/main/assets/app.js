@@ -50,6 +50,14 @@ function calcGoals(gender, age, height, weight, goal, activity) {
   return { calories: kcal, protein: protein, carbs: carbs, fat: fat, bmr: Math.round(bmr), tdee: Math.round(tdee) };
 }
 
+// 手动微调蛋白质/碳水/脂肪时，热量目标 = 蛋白质×4 + 碳水×4 + 脂肪×9 自动联动
+function syncCalFromMacros() {
+  var p = parseFloat(document.getElementById('target-protein-input').value) || 0;
+  var c = parseFloat(document.getElementById('target-carbs-input').value) || 0;
+  var f = parseFloat(document.getElementById('target-fat-input').value) || 0;
+  document.getElementById('target-cal-input').value = Math.round(p * 4 + c * 4 + f * 9);
+}
+
 function goalName(g) { return g === 'cut' ? '减脂' : g === 'bulk' ? '增肌' : '日常'; }
 
 // 点“计算推荐目标”：读取表单 → 算出目标 → 填进下方可编辑的目标输入框
