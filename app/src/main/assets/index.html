@@ -200,7 +200,7 @@
     <div id="modal-settings" class="modal-overlay" style="display:none">
       <div class="modal-sheet">
         <div class="modal-header">
-          <div style="font-size:11px;color:#8E9BAE">版本 v9.0</div><h3 id="settings-title">⚙️ 配置 DeepSeek API</h3>
+          <div style="font-size:11px;color:#8E9BAE">版本 v10.0</div><h3 id="settings-title">⚙️ 配置 DeepSeek API</h3>
           <button class="close-btn" onclick="closeSettings()">✕</button>
         </div>
         <p id="settings-hint" class="settings-hint">请填入你的 DeepSeek API Key，保存后即可拍照识别食物</p>
@@ -218,6 +218,7 @@
             <label>视觉模型（默认即可）</label>
             <input type="text" id="api-model-input" value="deepseek-flash" />
           </div>
+          <div class="form-group"><label>USDA API Key（选填，用于库里查不到的食物；不填用公共试用 key，可能限流）</label><input type="text" id="usda-key-input" placeholder="DEMO_KEY" /></div>
           <div class="form-group section-title"><label>👤 身体数据（用于计算每日营养目标）</label></div>
           <div class="form-row">
             <div class="form-group"><label>性别</label>
@@ -302,6 +303,7 @@
 
   </div>
 
+  <script src="fooddb.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
