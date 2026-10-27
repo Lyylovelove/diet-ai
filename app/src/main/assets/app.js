@@ -21,6 +21,7 @@ var appConfig = {
   height: 0,
   weight: 0,
   goal: 'maintain',
+  activity: 1.375,
   targetProtein: 100,
   targetCarbs: 250,
   targetFat: 60
@@ -28,13 +29,13 @@ var appConfig = {
 
 // ==========================================
 // 根据身高/体重/性别/目标计算每日营养目标
-// Mifflin-St Jeor 公式 + 轻度活动系数 1.4
+// Mifflin-St Jeor 公式 × 活动系数（久坐1.2 / 轻度1.375 / 中度1.55 / 高强度1.725）
 // ==========================================
-function calcGoals(gender, age, height, weight, goal) {
+function calcGoals(gender, age, height, weight, goal, activity) {
   if (!(height > 0) || !(weight > 0)) return null;
   age = age > 0 ? age : 30;
   var bmr = 10 * weight + 6.25 * height - 5 * age + (gender === 'female' ? -161 : 5);
-  var tdee = bmr * 1.4;
+  var tdee = bmr * (activity > 0 ? activity : 1.375);
   var factor = goal === 'cut' ? 0.8 : goal === 'bulk' ? 1.1 : 1.0;
   var kcal = tdee * factor;
   var floor = gender === 'female' ? 1200 : 1500;
@@ -58,7 +59,8 @@ function applyCalc() {
   var height = parseFloat(document.getElementById('height-input').value);
   var weight = parseFloat(document.getElementById('weight-input').value);
   var goal = document.getElementById('goal-input').value;
-  var g = calcGoals(gender, age, height, weight, goal);
+  var activity = parseFloat(document.getElementById('activity-input').value) || 1.375;
+  var g = calcGoals(gender, age, height, weight, goal, activity);
   if (!g) { toast('请先填写身高和体重'); return; }
   document.getElementById('target-cal-input').value = g.calories;
   document.getElementById('target-protein-input').value = g.protein;
@@ -123,6 +125,7 @@ function openSettings() {
   document.getElementById('height-input').value = appConfig.height || '';
   document.getElementById('weight-input').value = appConfig.weight || '';
   document.getElementById('goal-input').value = appConfig.goal || 'maintain';
+  document.getElementById('activity-input').value = String(appConfig.activity || 1.375);
   document.getElementById('target-protein-input').value = appConfig.targetProtein;
   document.getElementById('target-carbs-input').value = appConfig.targetCarbs;
   document.getElementById('target-fat-input').value = appConfig.targetFat;
@@ -153,6 +156,7 @@ function saveSettings() {
   appConfig.height = parseFloat(document.getElementById('height-input').value) || 0;
   appConfig.weight = parseFloat(document.getElementById('weight-input').value) || 0;
   appConfig.goal = document.getElementById('goal-input').value;
+  appConfig.activity = parseFloat(document.getElementById('activity-input').value) || 1.375;
   appConfig.targetProtein = parseInt(document.getElementById('target-protein-input').value) || 100;
   appConfig.targetCarbs = parseInt(document.getElementById('target-carbs-input').value) || 250;
   appConfig.targetFat = parseInt(document.getElementById('target-fat-input').value) || 60;
