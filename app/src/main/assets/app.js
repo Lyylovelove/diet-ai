@@ -22,6 +22,7 @@ var appConfig = {
   weight: 0,
   goal: 'maintain',
   activity: 1.375,
+  usdaKey: '',
   targetProtein: 100,
   targetCarbs: 250,
   targetFat: 60
@@ -139,6 +140,7 @@ function openSettings() {
   document.getElementById('weight-input').value = appConfig.weight || '';
   document.getElementById('goal-input').value = appConfig.goal || 'maintain';
   document.getElementById('activity-input').value = String(appConfig.activity || 1.375);
+  document.getElementById('usda-key-input').value = appConfig.usdaKey || '';
   document.getElementById('target-protein-input').value = appConfig.targetProtein;
   document.getElementById('target-carbs-input').value = appConfig.targetCarbs;
   document.getElementById('target-fat-input').value = appConfig.targetFat;
@@ -170,6 +172,7 @@ function saveSettings() {
   appConfig.weight = parseFloat(document.getElementById('weight-input').value) || 0;
   appConfig.goal = document.getElementById('goal-input').value;
   appConfig.activity = parseFloat(document.getElementById('activity-input').value) || 1.375;
+  appConfig.usdaKey = document.getElementById('usda-key-input').value.trim();
   appConfig.targetProtein = parseInt(document.getElementById('target-protein-input').value) || 100;
   appConfig.targetCarbs = parseInt(document.getElementById('target-carbs-input').value) || 250;
   appConfig.targetFat = parseInt(document.getElementById('target-fat-input').value) || 60;
@@ -209,7 +212,7 @@ function handleFile(file) {
   document.getElementById('modal-loading').style.display = 'flex';
 
   compressImage(file, function(base64) {
-    callDeepSeek(base64, getDesc(), function(result, err) {
+    analyzeFood(base64, getDesc(), function(result, err) {
       document.getElementById('modal-loading').style.display = 'none';
       if (err) { toast('识别失败：' + err); return; }
       document.getElementById('desc-input').value = '';
@@ -234,7 +237,7 @@ function textRecognize() {
   var desc = getDesc();
   if (!desc) { toast('请先在输入框里描述你吃了什么，例如：一碗米饭加两个煎蛋'); return; }
   document.getElementById('modal-loading').style.display = 'flex';
-  callDeepSeek('', desc, function(result, err) {
+  analyzeFood('', desc, function(result, err) {
     document.getElementById('modal-loading').style.display = 'none';
     if (err) { toast('识别失败：' + err); return; }
     document.getElementById('desc-input').value = '';
@@ -264,7 +267,7 @@ function compressImage(file, callback) {
 }
 
 function callDeepSeek(base64, desc, callback) {
-  var prompt = '你是专业营养师，请分析' + (base64 ? '这张食物照片' : '下面文字描述的食物') + '（熟悉中餐）。严格输出 JSON，不含 Markdown 标记：\n{"dish_name":"菜名","total_calories":500,"protein":20,"carbs":60,"fat":15,"ingredients":[{"name":"食材","weight":"100g","calories":200}],"health_tip":"营养建议"}';
+  var prompt = '你是专业营养师（熟悉中餐）。请识别' + (base64 ? '这张照片' : '下面文字描述') + '里的所有食物，拆成独立的食材或成品，并估算每项实际入口的可食部重量（克，烹饪后的重量）。\n严格只输出 JSON，不含 Markdown：\n{"dish_name":"菜名","items":[{"name":"食材中文标准名，用《中国食物成分表》里的常见叫法，如 米饭、鸡蛋、猪肉（瘦）、番茄、大白菜、花生油","name_en":"English name for USDA lookup, e.g. cooked white rice","grams":150,"kcal_guess":174,"protein_guess":4,"carbs_guess":39,"fat_guess":0.4}],"health_tip":"一句营养建议"}\n要求：1) 不要汇总总热量，由程序计算；2) 烹饪用油单独列一项；3) 同一道菜里的主料、配料、酱汁尽量分开列；4) grams 必须是数字。';
   if (desc) {
     prompt += '\n\n用户补充的文字描述（请以此校正分量、做法、食材等，描述与图片冲突时优先参考描述）：' + desc;
   }
@@ -344,7 +347,7 @@ function showResult(result, imageSrc) {
   (result.ingredients || []).forEach(function(ing) {
     var d = document.createElement('div');
     d.className = 'ing-row';
-    d.innerHTML = '<span class="ing-name">' + ing.name + ' <small>(' + ing.weight + ')</small></span><span class="ing-cal">' + ing.calories + ' kcal</span>';
+    d.innerHTML = '<span class="ing-name">' + ing.name + ' <small>(' + ing.weight + ')</small>' + (ing.src ? '<br><small style="color:#8E9BAE">' + ing.src + '</small>' : '') + '</span><span class="ing-cal">' + ing.calories + ' kcal</span>';
     listEl.appendChild(d);
   });
 
@@ -563,4 +566,187 @@ function fmtShort(str) { var p = str.split('-'); return parseInt(p[1]) + '/' + p
 function persistMeals() { localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory)); }
 function loadMeals() {
   try { var s = localStorage.getItem('diet_ai_meals'); if (s) mealsHistory = JSON.parse(s); } catch(e) {}
+}
+
+// ==========================================
+// 营养数据层：AI 只负责识别“食材 + 克数”，营养值由数据库计算
+// 查询顺序：本地精简中国食物成分表 → USDA 在线库 → AI 估值兜底
+// 参考思路：jakesteelman/macroscanner、harsha-gouda/foodscribe（LLM 输出结构化食材 → 营养库查询 → 按克数累加）
+// ==========================================
+var FOOD_ALIAS = {
+  '食用油': '花生油', '植物油': '花生油', '炒菜油': '花生油', '油': '花生油', '烹饪油': '花生油',
+  '白米饭': '米饭', '大米饭': '米饭', '蒸米饭': '米饭',
+  '鸡胸肉': '鸡胸脯肉', '牛奶': '纯牛奶', '鸭肉': '鸭', '面': '面条', '青椒': '辣椒（青、尖）', '柿子椒': '甜椒', '彩椒': '甜椒',
+  '白粥': '粳米粥', '粥': '粳米粥', '稀饭': '粳米粥', '大米': '稻米', '生米': '稻米'
+};
+var FOOD_INDEX = null;
+
+function buildFoodIndex() {
+  FOOD_INDEX = [];
+  if (typeof FOOD_DB === 'undefined') return;
+  for (var i = 0; i < FOOD_DB.length; i++) {
+    var r = FOOD_DB[i];
+    var full = r[0];
+    var base = full.replace(/[（(［\[].*$/, '').replace(/\s+/g, '');
+    // 别名：括号［］里的别名 + “，”分隔的别名，如 番茄［西红柿］、圆白菜，卷心菜
+    var aliases = [];
+    var m = full.match(/［(.*?)］/);
+    if (m) aliases = aliases.concat(m[1].split(/[、，,]/));
+    if (base.indexOf('，') >= 0) { aliases = aliases.concat(base.split('，')); base = base.split('，')[0]; }
+    FOOD_INDEX.push({ name: full, base: base, aliases: aliases, kcal: r[1], p: r[2], c: r[3], f: r[4] });
+  }
+}
+
+function bigrams(s) {
+  var a = [];
+  if (s.length < 2) return [s];
+  for (var i = 0; i < s.length - 1; i++) a.push(s.substr(i, 2));
+  return a;
+}
+
+function bigramScore(a, b) {
+  var x = bigrams(a), y = bigrams(b), inter = 0, used = {}, i;
+  for (i = 0; i < y.length; i++) used[y[i]] = (used[y[i]] || 0) + 1;
+  for (i = 0; i < x.length; i++) { if (used[x[i]] > 0) { inter++; used[x[i]]--; } }
+  return inter / (x.length + y.length - inter);
+}
+
+// 在本地成分表里找最接近的食物，得分太低返回 null（交给 USDA / AI 兜底）
+function lookupLocal(rawName) {
+  if (!FOOD_INDEX) buildFoodIndex();
+  var name = (rawName || '').replace(/\s+/g, '');
+  var dm = name.match(/[（(](.*?)[)）]/);
+  var detail = dm ? dm[1] : '';
+  var q = name.replace(/[（(［\[].*$/, '');
+  if (FOOD_ALIAS[q]) {
+    var a = FOOD_ALIAS[q];
+    var am = a.match(/[（(](.*?)[)）]/);
+    if (am && !detail) detail = am[1];
+    q = a.replace(/[（(].*$/, '');
+  }
+  if (!q) return null;
+  var best = null, bestScore = 0;
+  for (var i = 0; i < FOOD_INDEX.length; i++) {
+    var e = FOOD_INDEX[i], s = 0;
+    if (e.base === q) s = 0.9;
+    else if (e.aliases.indexOf(q) >= 0) s = 0.85;
+    else if (q.length >= 2 && e.base.length >= 2 &&
+             (e.base.indexOf(q) === 0 || (q.indexOf(e.base) >= 0 && e.base.length >= q.length * 0.5))) {
+      s = 0.55 + 0.3 * Math.min(q.length, e.base.length) / Math.max(q.length, e.base.length);
+    } else {
+      s = 0.8 * bigramScore(q, e.base);
+    }
+    if (s < 0.4) continue;
+    if (e.name.indexOf('代表值') >= 0) s += 0.05;
+    if (detail && e.name.indexOf(detail) >= 0) s += 0.12;
+    // 干制/脱水/生的条目：AI 报的是入口（水发/煮熟）后的重量，未明确要求时降权，优先水发/熟制条目
+    if (/干|脱水/.test(e.name) && !/干|脱水/.test(name)) s -= 0.2;
+    if (/（生/.test(e.name) && !/生/.test(name)) s -= 0.15;
+    if (/煮|蒸|熟|水发/.test(e.name)) s += 0.03;
+    s -= e.name.length * 0.0005;
+    if (s > bestScore) { bestScore = s; best = e; }
+  }
+  return bestScore >= 0.6 ? { entry: best, score: bestScore } : null;
+}
+
+// USDA FoodData Central 在线查询（每 100g 营养值），失败返回 null
+function lookupUSDA(q, cb) {
+  if (!q) { cb(null); return; }
+  var key = appConfig.usdaKey || 'DEMO_KEY';
+  var url = 'https://api.nal.usda.gov/fdc/v1/foods/search?query=' + encodeURIComponent(q) +
+            '&dataType=' + encodeURIComponent('Foundation,SR Legacy') + '&pageSize=5&api_key=' + encodeURIComponent(key);
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 10000;
+  xhr.onload = function() {
+    try {
+      var data = JSON.parse(xhr.responseText);
+      var foods = data.foods || [];
+      for (var i = 0; i < foods.length; i++) {
+        var n = {};
+        (foods[i].foodNutrients || []).forEach(function(x) { n[x.nutrientId] = x.value; });
+        var p = n[1003] || 0, c = n[1005] || 0, f = n[1004] || 0;
+        var kcal = n[1008] || (4 * p + 4 * c + 9 * f);
+        var calc = 4 * p + 4 * c + 9 * f;
+        if (kcal > 0 && Math.abs(calc - kcal) <= Math.max(35, kcal * 0.3)) {
+          cb({ name: foods[i].description, kcal: kcal, p: p, c: c, f: f });
+          return;
+        }
+      }
+      cb(null);
+    } catch (e) { cb(null); }
+  };
+  xhr.onerror = function() { cb(null); };
+  xhr.ontimeout = function() { cb(null); };
+  xhr.send();
+}
+
+function shortFoodName(n) { return n.length > 14 ? n.substring(0, 14) + '…' : n; }
+
+function makeDbItem(base, e, src) {
+  var k = base.grams / 100;
+  var item = {
+    name: base.name, grams: base.grams,
+    calories: e.kcal * k, protein: e.p * k, carbs: e.c * k, fat: e.f * k, src: src
+  };
+  // 合理性校验：数据库结果与 AI 估值差异过大，提示用户留意（可能匹配错或分量估错）
+  if (base.guess > 50 && item.calories > 0) {
+    var ratio = item.calories / base.guess;
+    if (ratio > 2.5 || ratio < 0.4) item.src += ' ⚠️与AI估值差异大';
+  }
+  return item;
+}
+
+function resolveNutrition(raw, done) {
+  var items = (raw && Object.prototype.toString.call(raw.items) === '[object Array]') ? raw.items : null;
+  if (!items || !items.length) { done(raw); return; }   // 兼容旧格式：直接使用 AI 汇总值
+  var out = [], pending = items.length;
+  function finish() { if (--pending === 0) done(buildResult(raw, out)); }
+  items.forEach(function(it, idx) {
+    var grams = parseFloat(it.grams) || 0;
+    if (grams < 1) grams = 1;
+    if (grams > 2000) grams = 2000;
+    var base = { name: it.name || '未知食材', grams: grams, guess: parseFloat(it.kcal_guess) || 0 };
+    var local = lookupLocal(it.name);
+    if (local) {
+      out[idx] = makeDbItem(base, local.entry, '成分表·' + shortFoodName(local.entry.name));
+      finish();
+      return;
+    }
+    lookupUSDA(it.name_en || '', function(n) {
+      if (n) {
+        out[idx] = makeDbItem(base, n, 'USDA·' + shortFoodName(n.name));
+      } else {
+        out[idx] = {
+          name: base.name, grams: grams, calories: base.guess,
+          protein: parseFloat(it.protein_guess) || 0, carbs: parseFloat(it.carbs_guess) || 0,
+          fat: parseFloat(it.fat_guess) || 0, src: 'AI估算（库中未找到）'
+        };
+      }
+      finish();
+    });
+  });
+}
+
+function buildResult(raw, list) {
+  var cal = 0, pro = 0, carb = 0, fat = 0, ings = [];
+  for (var i = 0; i < list.length; i++) {
+    var x = list[i];
+    if (!x) continue;
+    cal += x.calories; pro += x.protein; carb += x.carbs; fat += x.fat;
+    ings.push({ name: x.name, weight: Math.round(x.grams) + 'g', calories: Math.round(x.calories), src: x.src });
+  }
+  return {
+    dish_name: raw.dish_name,
+    total_calories: Math.round(cal), protein: Math.round(pro), carbs: Math.round(carb), fat: Math.round(fat),
+    ingredients: ings, health_tip: raw.health_tip
+  };
+}
+
+// 识别入口：DeepSeek 识别食材与克数 → 数据库计算营养
+function analyzeFood(base64, desc, callback) {
+  callDeepSeek(base64, desc, function(raw, err) {
+    if (err) { callback(null, err); return; }
+    resolveNutrition(raw, function(finalResult) { callback(finalResult, null); });
+  });
 }
