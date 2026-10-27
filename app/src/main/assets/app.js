@@ -15,8 +15,60 @@ var appConfig = {
   apiKey: '',
   baseUrl: 'https://api.deepseek.com',
   model: 'deepseek-flash',
-  targetCalories: 2000
+  targetCalories: 2000,
+  gender: 'male',
+  age: 30,
+  height: 0,
+  weight: 0,
+  goal: 'maintain',
+  targetProtein: 100,
+  targetCarbs: 250,
+  targetFat: 60
 };
+
+// ==========================================
+// 根据身高/体重/性别/目标计算每日营养目标
+// Mifflin-St Jeor 公式 + 轻度活动系数 1.4
+// ==========================================
+function calcGoals(gender, age, height, weight, goal) {
+  if (!(height > 0) || !(weight > 0)) return null;
+  age = age > 0 ? age : 30;
+  var bmr = 10 * weight + 6.25 * height - 5 * age + (gender === 'female' ? -161 : 5);
+  var tdee = bmr * 1.4;
+  var factor = goal === 'cut' ? 0.8 : goal === 'bulk' ? 1.1 : 1.0;
+  var kcal = tdee * factor;
+  var floor = gender === 'female' ? 1200 : 1500;
+  if (kcal < floor) kcal = floor;
+  kcal = Math.round(kcal / 10) * 10;
+  var perKg = goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.2;
+  var protein = Math.round(weight * perKg);
+  var fatPct = goal === 'maintain' ? 0.28 : 0.25;
+  var fat = Math.round(kcal * fatPct / 9);
+  var carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
+  if (carbs < 50) carbs = 50;
+  return { calories: kcal, protein: protein, carbs: carbs, fat: fat, bmr: Math.round(bmr), tdee: Math.round(tdee) };
+}
+
+function goalName(g) { return g === 'cut' ? '减脂' : g === 'bulk' ? '增肌' : '日常'; }
+
+// 点“计算推荐目标”：读取表单 → 算出目标 → 填进下方可编辑的目标输入框
+function applyCalc() {
+  var gender = document.getElementById('gender-input').value;
+  var age = parseInt(document.getElementById('age-input').value) || 30;
+  var height = parseFloat(document.getElementById('height-input').value);
+  var weight = parseFloat(document.getElementById('weight-input').value);
+  var goal = document.getElementById('goal-input').value;
+  var g = calcGoals(gender, age, height, weight, goal);
+  if (!g) { toast('请先填写身高和体重'); return; }
+  document.getElementById('target-cal-input').value = g.calories;
+  document.getElementById('target-protein-input').value = g.protein;
+  document.getElementById('target-carbs-input').value = g.carbs;
+  document.getElementById('target-fat-input').value = g.fat;
+  var box = document.getElementById('calc-result');
+  box.style.display = 'block';
+  box.textContent = '基础代谢约 ' + g.bmr + ' kcal，日常消耗约 ' + g.tdee + ' kcal。目标「' + goalName(goal) + '」→ 每日 ' + g.calories + ' kcal，蛋白质 ' + g.protein + 'g，碳水 ' + g.carbs + 'g，脂肪 ' + g.fat + 'g（可手动微调后保存）';
+  toast('已计算推荐目标，确认后点保存');
+}
 var mealsHistory = [];
 var pendingMeal = null;
 var currentStatsRange = 'week';
@@ -66,6 +118,15 @@ function openSettings() {
   document.getElementById('api-base-input').value = appConfig.baseUrl;
   document.getElementById('api-model-input').value = appConfig.model;
   document.getElementById('target-cal-input').value = appConfig.targetCalories;
+  document.getElementById('gender-input').value = appConfig.gender || 'male';
+  document.getElementById('age-input').value = appConfig.age || 30;
+  document.getElementById('height-input').value = appConfig.height || '';
+  document.getElementById('weight-input').value = appConfig.weight || '';
+  document.getElementById('goal-input').value = appConfig.goal || 'maintain';
+  document.getElementById('target-protein-input').value = appConfig.targetProtein;
+  document.getElementById('target-carbs-input').value = appConfig.targetCarbs;
+  document.getElementById('target-fat-input').value = appConfig.targetFat;
+  document.getElementById('calc-result').style.display = 'none';
   document.getElementById('modal-settings').style.display = 'flex';
 }
 
@@ -87,6 +148,14 @@ function saveSettings() {
   appConfig.baseUrl = document.getElementById('api-base-input').value.trim() || 'https://api.deepseek.com';
   appConfig.model = document.getElementById('api-model-input').value.trim() || 'deepseek-flash';
   appConfig.targetCalories = parseInt(document.getElementById('target-cal-input').value) || 2000;
+  appConfig.gender = document.getElementById('gender-input').value;
+  appConfig.age = parseInt(document.getElementById('age-input').value) || 30;
+  appConfig.height = parseFloat(document.getElementById('height-input').value) || 0;
+  appConfig.weight = parseFloat(document.getElementById('weight-input').value) || 0;
+  appConfig.goal = document.getElementById('goal-input').value;
+  appConfig.targetProtein = parseInt(document.getElementById('target-protein-input').value) || 100;
+  appConfig.targetCarbs = parseInt(document.getElementById('target-carbs-input').value) || 250;
+  appConfig.targetFat = parseInt(document.getElementById('target-fat-input').value) || 60;
   localStorage.setItem('diet_ai_config', JSON.stringify(appConfig));
   document.getElementById('target-calories').textContent = appConfig.targetCalories + ' kcal';
   document.getElementById('modal-settings').style.display = 'none';
@@ -97,7 +166,11 @@ function saveSettings() {
 function loadConfig() {
   try {
     var saved = localStorage.getItem('diet_ai_config');
-    if (saved) { appConfig = JSON.parse(saved); if (appConfig.model === 'deepseek-chat') appConfig.model = 'deepseek-flash'; }
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      for (var k in parsed) { if (parsed.hasOwnProperty(k)) appConfig[k] = parsed[k]; }
+      if (appConfig.model === 'deepseek-chat') appConfig.model = 'deepseek-flash';
+    }
   } catch(e) {}
   document.getElementById('target-calories').textContent = appConfig.targetCalories + ' kcal';
 }
@@ -119,11 +192,36 @@ function handleFile(file) {
   document.getElementById('modal-loading').style.display = 'flex';
 
   compressImage(file, function(base64) {
-    callDeepSeek(base64, function(result, err) {
+    callDeepSeek(base64, getDesc(), function(result, err) {
       document.getElementById('modal-loading').style.display = 'none';
       if (err) { toast('识别失败：' + err); return; }
+      document.getElementById('desc-input').value = '';
       showResult(result, base64);
     });
+  });
+}
+
+// 读取“文字描述”输入框内容
+function getDesc() {
+  var el = document.getElementById('desc-input');
+  return el ? el.value.trim() : '';
+}
+
+// 仅用文字描述识别（不拍照）
+function textRecognize() {
+  if (!appConfig.apiKey) {
+    toast('请先点击底部「设置」，填入 DeepSeek API Key');
+    openSettings();
+    return;
+  }
+  var desc = getDesc();
+  if (!desc) { toast('请先在输入框里描述你吃了什么，例如：一碗米饭加两个煎蛋'); return; }
+  document.getElementById('modal-loading').style.display = 'flex';
+  callDeepSeek('', desc, function(result, err) {
+    document.getElementById('modal-loading').style.display = 'none';
+    if (err) { toast('识别失败：' + err); return; }
+    document.getElementById('desc-input').value = '';
+    showResult(result, '');
   });
 }
 
@@ -148,8 +246,21 @@ function compressImage(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function callDeepSeek(base64, callback) {
-  var prompt = '你是专业营养师，请分析这张食物照片（熟悉中餐）。严格输出 JSON，不含 Markdown 标记：\n{"dish_name":"菜名","total_calories":500,"protein":20,"carbs":60,"fat":15,"ingredients":[{"name":"食材","weight":"100g","calories":200}],"health_tip":"营养建议"}';
+function callDeepSeek(base64, desc, callback) {
+  var prompt = '你是专业营养师，请分析' + (base64 ? '这张食物照片' : '下面文字描述的食物') + '（熟悉中餐）。严格输出 JSON，不含 Markdown 标记：\n{"dish_name":"菜名","total_calories":500,"protein":20,"carbs":60,"fat":15,"ingredients":[{"name":"食材","weight":"100g","calories":200}],"health_tip":"营养建议"}';
+  if (desc) {
+    prompt += '\n\n用户补充的文字描述（请以此校正分量、做法、食材等，描述与图片冲突时优先参考描述）：' + desc;
+  }
+
+  var userContent;
+  if (base64) {
+    userContent = [
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: base64 } }
+    ];
+  } else {
+    userContent = prompt;
+  }
 
   var endpoint = (appConfig.baseUrl || 'https://api.deepseek.com').replace(/\/+$/, '') + '/chat/completions';
 
@@ -176,10 +287,7 @@ function callDeepSeek(base64, callback) {
     model: appConfig.model || 'deepseek-flash',
     messages: [{
       role: 'user',
-      content: [
-        { type: 'text', text: prompt },
-        { type: 'image_url', image_url: { url: base64 } }
-      ]
+      content: userContent
     }],
     temperature: 0.3
   }));
@@ -205,7 +313,9 @@ function showResult(result, imageSrc) {
   };
 
   document.getElementById('result-dish-name').textContent = pendingMeal.name;
-  document.getElementById('result-img').src = imageSrc;
+  var resImg = document.getElementById('result-img');
+  if (imageSrc) { resImg.src = imageSrc; resImg.style.display = 'block'; }
+  else { resImg.removeAttribute('src'); resImg.style.display = 'none'; }
   document.getElementById('res-cal').textContent = pendingMeal.calories;
   document.getElementById('res-protein').textContent = pendingMeal.protein + 'g';
   document.getElementById('res-carbs').textContent = pendingMeal.carbs + 'g';
@@ -261,9 +371,12 @@ function renderDashboard() {
   document.getElementById('protein-val').textContent = pro + 'g';
   document.getElementById('carbs-val').textContent = carb + 'g';
   document.getElementById('fat-val').textContent = fat + 'g';
-  document.getElementById('protein-bar').style.width = Math.min(100, pro / 100 * 100) + '%';
-  document.getElementById('carbs-bar').style.width = Math.min(100, carb / 250 * 100) + '%';
-  document.getElementById('fat-bar').style.width = Math.min(100, fat / 60 * 100) + '%';
+  document.getElementById('protein-bar').style.width = Math.min(100, pro / (appConfig.targetProtein || 100) * 100) + '%';
+  document.getElementById('carbs-bar').style.width = Math.min(100, carb / (appConfig.targetCarbs || 250) * 100) + '%';
+  document.getElementById('fat-bar').style.width = Math.min(100, fat / (appConfig.targetFat || 60) * 100) + '%';
+  document.getElementById('protein-val').textContent = pro + ' / ' + (appConfig.targetProtein || 100) + 'g';
+  document.getElementById('carbs-val').textContent = carb + ' / ' + (appConfig.targetCarbs || 250) + 'g';
+  document.getElementById('fat-val').textContent = fat + ' / ' + (appConfig.targetFat || 60) + 'g';
 
   var listEl = document.getElementById('meals-list');
   listEl.innerHTML = '';
@@ -275,7 +388,7 @@ function renderDashboard() {
     var card = document.createElement('div');
     card.className = 'meal-card';
     card.innerHTML =
-      '<img class="meal-thumb" src="' + (meal.image || '') + '" />' +
+      (meal.image ? '<img class="meal-thumb" src="' + meal.image + '" />' : '<div class="meal-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:#222a38">📝</div>') +
       '<div class="meal-details">' +
         '<div class="meal-top"><span class="meal-name">' + meal.name + '</span>' +
         '<span class="meal-type-tag">' + meal.type + ' · ' + meal.timestamp + '</span></div>' +
