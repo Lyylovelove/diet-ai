@@ -1,10 +1,20 @@
+// DietAI v4.0
+function toast(msg) {
+  var el = document.getElementById('toast');
+  if (!el) { return; }
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (window._toastTimer) clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+window.onerror = function(msg, src, line) { toast('脚本错误: ' + msg + ' (行' + line + ')'); return false; };
 // DietAI v2.1 — WebView 兼容版
 // 所有交互通过全局函数 + onclick 绑定，彻底规避 WebView addEventListener 失效问题
 
 var appConfig = {
   apiKey: '',
   baseUrl: 'https://api.deepseek.com',
-  model: 'deepseek-chat',
+  model: 'deepseek-flash',
   targetCalories: 2000
 };
 var mealsHistory = [];
@@ -61,7 +71,7 @@ function openSettings() {
 
 function closeSettings() {
   if (!appConfig.apiKey) {
-    alert('请先填入 DeepSeek API Key 才能使用拍照识别功能');
+    toast('请先填入 DeepSeek API Key 才能使用拍照识别功能');
     return;
   }
   document.getElementById('modal-settings').style.display = 'none';
@@ -70,7 +80,7 @@ function closeSettings() {
 function saveSettings() {
   var key = document.getElementById('api-key-input').value.trim();
   if (!key) {
-    alert('请填入 DeepSeek API Key');
+    toast('请填入 DeepSeek API Key');
     return;
   }
   appConfig.apiKey = key;
@@ -81,13 +91,13 @@ function saveSettings() {
   document.getElementById('target-calories').textContent = appConfig.targetCalories + ' kcal';
   document.getElementById('modal-settings').style.display = 'none';
   renderDashboard();
-  alert('✅ 保存成功！现在可以拍照识别了');
+  toast('✅ 保存成功！现在可以拍照识别了');
 }
 
 function loadConfig() {
   try {
     var saved = localStorage.getItem('diet_ai_config');
-    if (saved) { appConfig = JSON.parse(saved); }
+    if (saved) { appConfig = JSON.parse(saved); if (appConfig.model === 'deepseek-chat') appConfig.model = 'deepseek-flash'; }
   } catch(e) {}
   document.getElementById('target-calories').textContent = appConfig.targetCalories + ' kcal';
 }
@@ -98,7 +108,7 @@ function loadConfig() {
 function handleFile(file) {
   if (!file) return;
   if (!appConfig.apiKey) {
-    alert('请先点击右上角⚙️设置，填入 DeepSeek API Key');
+    toast('请先点击右上角⚙️设置，填入 DeepSeek API Key');
     openSettings();
     return;
   }
@@ -111,7 +121,7 @@ function handleFile(file) {
   compressImage(file, function(base64) {
     callDeepSeek(base64, function(result, err) {
       document.getElementById('modal-loading').style.display = 'none';
-      if (err) { alert('识别失败：' + err); return; }
+      if (err) { toast('识别失败：' + err); return; }
       showResult(result, base64);
     });
   });
