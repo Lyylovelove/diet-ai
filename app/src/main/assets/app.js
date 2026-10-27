@@ -217,6 +217,11 @@ function handleFile(file) {
   document.getElementById('modal-loading').style.display = 'flex';
 
   compressImage(file, function(base64) {
+    if (!base64) {
+      document.getElementById('modal-loading').style.display = 'none';
+      toast('图片读取失败，请换一张再试');
+      return;
+    }
     analyzeFood(base64, getDesc(), function(result, err) {
       document.getElementById('modal-loading').style.display = 'none';
       if (err) { toast('识别失败：' + err); return; }
@@ -252,8 +257,10 @@ function textRecognize() {
 
 function compressImage(file, callback) {
   var reader = new FileReader();
+  reader.onerror = function() { callback(null); };
   reader.onload = function(e) {
     var img = new Image();
+    img.onerror = function() { callback(null); };
     img.onload = function() {
       var canvas = document.createElement('canvas');
       var maxW = 1024;
@@ -296,14 +303,21 @@ function callDeepSeek(base64, desc, callback) {
   xhr.timeout = 30000;
 
   xhr.onload = function() {
+    var parsed = null, errMsg = '';
     try {
       var data = JSON.parse(xhr.responseText);
-      var raw = (data.choices[0].message.content || '{}').trim();
-      raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
-      callback(JSON.parse(raw), null);
-    } catch(e) {
-      callback(null, '解析失败: ' + xhr.responseText.substring(0, 200));
+      if (data.error) {
+        errMsg = data.error.message || JSON.stringify(data.error);
+      } else {
+        var raw = (data.choices[0].message.content || '').trim();
+        var s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+        if (s < 0 || e <= s) throw new Error('no json');
+        parsed = JSON.parse(raw.substring(s, e + 1));
+      }
+    } catch (ex) {
+      errMsg = '解析失败: ' + xhr.responseText.substring(0, 200);
     }
+    if (parsed) callback(parsed, null); else callback(null, errMsg || '解析失败');
   };
   xhr.onerror = function() { callback(null, '网络连接失败，请检查网络'); };
   xhr.ontimeout = function() { callback(null, '请求超时，请重试'); };
@@ -352,7 +366,7 @@ function showResult(result, imageSrc) {
   (result.ingredients || []).forEach(function(ing) {
     var d = document.createElement('div');
     d.className = 'ing-row';
-    d.innerHTML = '<span class="ing-name">' + ing.name + ' <small>(' + ing.weight + ')</small>' + (ing.src ? '<br><small style="color:#8E9BAE">' + ing.src + '</small>' : '') + '</span><span class="ing-cal">' + ing.calories + ' kcal</span>';
+    d.innerHTML = '<span class="ing-name">' + esc(ing.name) + ' <small>(' + esc(ing.weight) + ')</small>' + (ing.src ? '<br><small style="color:#8E9BAE">' + esc(ing.src) + '</small>' : '') + '</span><span class="ing-cal">' + ing.calories + ' kcal</span>';
     listEl.appendChild(d);
   });
 
@@ -369,12 +383,31 @@ function closeResult() {
 
 function saveMeal() {
   if (!pendingMeal) return;
-  pendingMeal.type = document.getElementById('meal-type-picker').value;
-  mealsHistory.unshift(pendingMeal);
-  persistMeals();
-  renderDashboard();
-  document.getElementById('modal-result').style.display = 'none';
+  var meal = pendingMeal;
+  meal.type = document.getElementById('meal-type-picker').value;
   pendingMeal = null;
+  document.getElementById('modal-result').style.display = 'none';
+  function commit() { mealsHistory.unshift(meal); persistMeals(); renderDashboard(); }
+  // 历史记录里只存小缩略图，避免 localStorage 被大图撑爆（原图每张约 100KB+）
+  if (meal.image && meal.image.length > 20000) {
+    makeThumb(meal.image, function(th) { meal.image = th; commit(); });
+  } else {
+    commit();
+  }
+}
+
+function makeThumb(dataUrl, cb) {
+  var img = new Image();
+  img.onerror = function() { cb(''); };
+  img.onload = function() {
+    var max = 200, w = img.width, h = img.height;
+    if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    cb(c.toDataURL('image/jpeg', 0.6));
+  };
+  img.src = dataUrl;
 }
 
 // ==========================================
@@ -415,8 +448,8 @@ function renderDashboard() {
     card.innerHTML =
       (meal.image ? '<img class="meal-thumb" src="' + meal.image + '" />' : '<div class="meal-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:#222a38">📝</div>') +
       '<div class="meal-details">' +
-        '<div class="meal-top"><span class="meal-name">' + meal.name + '</span>' +
-        '<span class="meal-type-tag">' + meal.type + ' · ' + meal.timestamp + '</span></div>' +
+        '<div class="meal-top"><span class="meal-name">' + esc(meal.name) + '</span>' +
+        '<span class="meal-type-tag">' + esc(meal.type) + ' · ' + esc(meal.timestamp) + '</span></div>' +
         '<div class="meal-meta"><span class="meal-cal">' + meal.calories + ' kcal</span>' +
         '<span>蛋 ' + meal.protein + 'g</span><span>碳 ' + meal.carbs + 'g</span><span>脂 ' + meal.fat + 'g</span></div>' +
       '</div>' +
@@ -565,10 +598,17 @@ function toDateStr(d) {
   return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
 
+function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 function fmtDate(str) { if (!str) return '--'; var p = str.split('-'); return parseInt(p[1]) + '月' + parseInt(p[2]) + '日'; }
 function fmtShort(str) { var p = str.split('-'); return parseInt(p[1]) + '/' + parseInt(p[2]); }
-function persistMeals() { localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory)); }
+function persistMeals() {
+  try { localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory)); return; } catch (e) {}
+  // 存储空间不足：丢弃较早记录的缩略图后重试（营养数据保留，统计不受影响）
+  for (var i = 10; i < mealsHistory.length; i++) mealsHistory[i].image = '';
+  try { localStorage.setItem('diet_ai_meals', JSON.stringify(mealsHistory)); }
+  catch (e2) { toast('存储空间不足，本次记录可能未保存'); }
+}
 function loadMeals() {
   try { var s = localStorage.getItem('diet_ai_meals'); if (s) mealsHistory = JSON.parse(s); } catch(e) {}
 }
@@ -664,22 +704,22 @@ function lookupUSDA(q, cb) {
   xhr.open('GET', url, true);
   xhr.timeout = 10000;
   xhr.onload = function() {
+    var found = null;
     try {
       var data = JSON.parse(xhr.responseText);
       var foods = data.foods || [];
-      for (var i = 0; i < foods.length; i++) {
+      for (var i = 0; i < foods.length && !found; i++) {
         var n = {};
         (foods[i].foodNutrients || []).forEach(function(x) { n[x.nutrientId] = x.value; });
         var p = n[1003] || 0, c = n[1005] || 0, f = n[1004] || 0;
-        var kcal = n[1008] || (4 * p + 4 * c + 9 * f);
         var calc = 4 * p + 4 * c + 9 * f;
+        var kcal = n[1008] || calc;
         if (kcal > 0 && Math.abs(calc - kcal) <= Math.max(35, kcal * 0.3)) {
-          cb({ name: foods[i].description, kcal: kcal, p: p, c: c, f: f });
-          return;
+          found = { name: foods[i].description, kcal: kcal, p: p, c: c, f: f };
         }
       }
-      cb(null);
-    } catch (e) { cb(null); }
+    } catch (e) { found = null; }
+    cb(found);
   };
   xhr.onerror = function() { cb(null); };
   xhr.ontimeout = function() { cb(null); };
@@ -702,32 +742,45 @@ function makeDbItem(base, e, src) {
   return item;
 }
 
+var usdaCache = {};
+function lookupUSDACached(q, cb) {
+  if (!q) { setTimeout(function() { cb(null); }, 0); return; }
+  var k = q.toLowerCase();
+  if (usdaCache.hasOwnProperty(k)) { var v = usdaCache[k]; setTimeout(function() { cb(v); }, 0); return; }
+  lookupUSDA(q, function(n) { if (n) usdaCache[k] = n; cb(n); });
+}
+
 function resolveNutrition(raw, done) {
   var items = (raw && Object.prototype.toString.call(raw.items) === '[object Array]') ? raw.items : null;
   if (!items || !items.length) { done(raw); return; }   // 兼容旧格式：直接使用 AI 汇总值
   var out = [], pending = items.length;
   function finish() { if (--pending === 0) done(buildResult(raw, out)); }
   items.forEach(function(it, idx) {
+    if (!it || typeof it !== 'object') { finish(); return; }
     var grams = parseFloat(it.grams) || 0;
     if (grams < 1) grams = 1;
     if (grams > 2000) grams = 2000;
     var base = { name: it.name || '未知食材', grams: grams, guess: parseFloat(it.kcal_guess) || 0 };
-    var local = lookupLocal(it.name);
-    if (local) {
-      out[idx] = makeDbItem(base, local.entry, '成分表·' + shortFoodName(local.entry.name));
-      finish();
-      return;
+    function aiFallback() {
+      out[idx] = {
+        name: base.name, grams: grams, calories: base.guess,
+        protein: parseFloat(it.protein_guess) || 0, carbs: parseFloat(it.carbs_guess) || 0,
+        fat: parseFloat(it.fat_guess) || 0, src: 'AI估算（库中未找到）'
+      };
     }
-    lookupUSDA(it.name_en || '', function(n) {
-      if (n) {
-        out[idx] = makeDbItem(base, n, 'USDA·' + shortFoodName(n.name));
-      } else {
-        out[idx] = {
-          name: base.name, grams: grams, calories: base.guess,
-          protein: parseFloat(it.protein_guess) || 0, carbs: parseFloat(it.carbs_guess) || 0,
-          fat: parseFloat(it.fat_guess) || 0, src: 'AI估算（库中未找到）'
-        };
+    try {
+      var local = lookupLocal(it.name);
+      if (local) {
+        out[idx] = makeDbItem(base, local.entry, '成分表·' + shortFoodName(local.entry.name));
+        finish();
+        return;
       }
+    } catch (e) { aiFallback(); finish(); return; }
+    lookupUSDACached(it.name_en || '', function(n) {
+      try {
+        if (n) out[idx] = makeDbItem(base, n, 'USDA·' + shortFoodName(n.name));
+        else aiFallback();
+      } catch (e) { aiFallback(); }
       finish();
     });
   });
