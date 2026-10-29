@@ -7,12 +7,12 @@ window.onerror = function(msg, url, line) {
 // ====== 自定义顶部轻提示（兼容三星 WebView） ======
 var toastTimer = null;
 function toast(msg, duration) {
-  duration = duration || 2800;
+  duration = duration || 3000;
   var el = document.getElementById('app-toast');
   if (!el) {
     el = document.createElement('div');
     el.id = 'app-toast';
-    el.style.cssText = 'position:fixed;top:18px;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,26,38,0.96);color:#F8FAFC;border:1px solid rgba(52,211,153,0.45);padding:11px 18px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;max-width:90%;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,0.55);-webkit-transition:opacity 0.22s;transition:opacity 0.22s;pointer-events:none;line-height:1.4;';
+    el.style.cssText = 'position:fixed;top:18px;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(15,21,33,0.96);color:#F8FAFC;border:1px solid rgba(52,211,153,0.45);padding:11px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;max-width:90%;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,0.6);-webkit-transition:opacity 0.22s;transition:opacity 0.22s;pointer-events:none;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
     document.body.appendChild(el);
   }
   el.textContent = msg;
@@ -35,9 +35,10 @@ function esc(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ====== 状态与本地存储 ======
+// ====== 状态与本地存储（同时兼容 v12 diet_ai_config 与 v13/v14 diet_cfg） ======
 var config = {
   apiKey: '',
+  baseUrl: 'https://api.deepseek.com',
   usdaKey: '',
   model: 'deepseek-flash',
   gender: 'male',
@@ -52,37 +53,73 @@ var config = {
   fGoal: 65
 };
 
-try {
-  var savedCfg = JSON.parse(localStorage.getItem('diet_cfg'));
-  if (savedCfg) {
-    config.apiKey   = savedCfg.apiKey   || '';
-    config.usdaKey  = savedCfg.usdaKey  || '';
-    config.model    = 'deepseek-flash';
-    config.gender   = savedCfg.gender   || 'male';
-    config.age      = Number(savedCfg.age)      || 25;
-    config.height   = Number(savedCfg.height)   || 175;
-    config.weight   = Number(savedCfg.weight)   || 70;
-    config.goalType = savedCfg.goalType || 'cut';
-    config.activity = Number(savedCfg.activity) || 1.375;
-    config.calGoal  = Number(savedCfg.calGoal)  || 2000;
-    config.pGoal    = Number(savedCfg.pGoal)    || 150;
-    config.cGoal    = Number(savedCfg.cGoal)    || 200;
-    config.fGoal    = Number(savedCfg.fGoal)    || 65;
-  }
-} catch (e) { console.warn('读取配置失败:', e); }
+function loadSavedConfig() {
+  try {
+    var raw13 = localStorage.getItem('diet_cfg');
+    var raw12 = localStorage.getItem('diet_ai_config');
+    var c13 = raw13 ? JSON.parse(raw13) : null;
+    var c12 = raw12 ? JSON.parse(raw12) : null;
+    var saved = c13 || c12;
+    if (saved) {
+      config.apiKey   = saved.apiKey || (c12 && c12.apiKey) || '';
+      config.baseUrl  = saved.baseUrl || (c12 && c12.baseUrl) || 'https://api.deepseek.com';
+      config.usdaKey  = saved.usdaKey || (c12 && c12.usdaKey) || '';
+      config.model    = saved.model || (c12 && c12.model) || 'deepseek-flash';
+      if (config.model === 'deepseek-chat') config.model = 'deepseek-flash';
+      config.gender   = saved.gender || 'male';
+      config.age      = Number(saved.age) || 25;
+      config.height   = Number(saved.height) || 175;
+      config.weight   = Number(saved.weight) || 70;
+      config.goalType = saved.goalType || saved.goal || 'cut';
+      config.activity = Number(saved.activity) || 1.375;
+      config.calGoal  = Number(saved.calGoal || saved.targetCalories) || 2000;
+      config.pGoal    = Number(saved.pGoal || saved.targetProtein) || 150;
+      config.cGoal    = Number(saved.cGoal || saved.targetCarbs) || 200;
+      config.fGoal    = Number(saved.fGoal || saved.targetFat) || 65;
+    }
+  } catch (e) { console.warn('读取配置失败:', e); }
+}
+loadSavedConfig();
 
 var mealsHistory = [];
-try {
-  var savedMeals = JSON.parse(localStorage.getItem('diet_meals'));
-  if (Array.isArray(savedMeals)) mealsHistory = savedMeals;
-} catch (e) { console.warn('读取历史记录失败:', e); }
+function loadSavedMeals() {
+  try {
+    var m13 = localStorage.getItem('diet_meals');
+    var m12 = localStorage.getItem('diet_ai_meals');
+    var arr13 = m13 ? JSON.parse(m13) : [];
+    var arr12 = m12 ? JSON.parse(m12) : [];
+    var map = {};
+    var merged = [];
+    (Array.isArray(arr13) ? arr13 : []).concat(Array.isArray(arr12) ? arr12 : []).forEach(function(m) {
+      if (!m || !m.id) return;
+      if (!map[m.id]) {
+        map[m.id] = true;
+        merged.push({
+          id: m.id,
+          date: m.date,
+          time: m.time || m.timestamp || '',
+          name: m.name || '饮食记录',
+          mealType: m.mealType || m.type || '正餐',
+          calories: Number(m.calories) || 0,
+          protein: Number(m.protein) || 0,
+          carbs: Number(m.carbs) || 0,
+          fat: Number(m.fat) || 0,
+          img: m.img || m.image || ''
+        });
+      }
+    });
+    merged.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+    mealsHistory = merged;
+  } catch (e) { console.warn('读取历史记录失败:', e); }
+}
+loadSavedMeals();
 
 function persistMeals() {
   try {
-    localStorage.setItem('diet_meals', JSON.stringify(mealsHistory));
+    var str = JSON.stringify(mealsHistory);
+    localStorage.setItem('diet_meals', str);
     return true;
   } catch (e) {
-    console.warn('存储空间不足，自动清理旧缩略图释放空间:', e);
     for (var i = mealsHistory.length - 1; i >= 0; i--) {
       if (mealsHistory[i].img) {
         mealsHistory[i].img = '';
@@ -92,12 +129,12 @@ function persistMeals() {
         } catch (e2) {}
       }
     }
-    toast('⚠️ 手机本地存储空间已满，请导出备份或清理旧记录');
+    toast('本地存储已满，请导出备份或清理旧记录');
     return false;
   }
 }
 
-// ====== 日期工具与当前选中日期（支持补录前几天数据） ======
+// ====== 日期工具与当前选中日期 ======
 function toDateStr(d) {
   var y = d.getFullYear();
   var m = String(d.getMonth() + 1);
@@ -113,13 +150,13 @@ var tempMealResult = null;
 var stagedImageBase64 = '';
 
 function formatChineseDate(dateStr) {
-  var parts = dateStr.split('-');
+  var parts = String(dateStr || '').split('-');
   if (parts.length !== 3) return dateStr;
   return parseInt(parts[1], 10) + '月' + parseInt(parts[2], 10) + '日';
 }
 
 function getWeekDayName(dateStr) {
-  var parts = dateStr.split('-');
+  var parts = String(dateStr || '').split('-');
   var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
   var days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   return days[d.getDay()] || '';
@@ -132,7 +169,7 @@ function shiftDate(deltaDays) {
   var nextStr = toDateStr(d);
   var todayStr = toDateStr(new Date());
   if (nextStr > todayStr) {
-    toast('不能选择未来的日期哦');
+    toast('不能选择未来的日期');
     return;
   }
   selectedDate = nextStr;
@@ -143,7 +180,7 @@ function pickDate(val) {
   if (!val) return;
   var todayStr = toDateStr(new Date());
   if (val > todayStr) {
-    toast('不能选择未来的日期哦');
+    toast('不能选择未来的日期');
     document.getElementById('date-picker').value = selectedDate;
     return;
   }
@@ -181,12 +218,11 @@ function switchTab(tab) {
   if (tab === 'stats') renderStats(currentStatsPeriod);
 }
 
-// ====== 首页渲染（支持任意选中日期） ======
+// ====== 首页渲染 ======
 function renderDashboard() {
   var todayStr = toDateStr(new Date());
   var isToday = (selectedDate === todayStr);
 
-  // 更新日期导航栏
   var pickerEl = document.getElementById('date-picker');
   if (pickerEl) {
     pickerEl.value = selectedDate;
@@ -196,7 +232,7 @@ function renderDashboard() {
   if (labelEl) {
     labelEl.textContent = isToday
       ? ('今天 · ' + formatChineseDate(selectedDate))
-      : (formatChineseDate(selectedDate) + ' · ' + getWeekDayName(selectedDate));
+      : (formatChineseDate(selectedDate) + ' ' + getWeekDayName(selectedDate));
   }
   var backBtn = document.getElementById('btn-back-today');
   if (backBtn) backBtn.style.display = isToday ? 'none' : 'inline-block';
@@ -229,18 +265,18 @@ function renderDashboard() {
   document.getElementById('cal-remaining').textContent = isOver ? (eatenCal - config.calGoal) : remaining;
   var statusLabel = document.getElementById('cal-status-label');
   if (statusLabel) {
-    statusLabel.textContent = isOver ? '已超标 kcal' : (isToday ? '还可摄入' : '当日剩余');
+    statusLabel.textContent = isOver ? '已超标 kcal' : (isToday ? '剩余千卡' : '当日剩余');
     statusLabel.style.color = isOver ? '#FB7185' : '';
   }
   var pctEl = document.getElementById('cal-pct');
   if (pctEl) pctEl.textContent = pct + '%';
 
-  // 圆环进度 (r=52 => 周长 326.7)
-  var circumference = 326.7;
+  // 圆环进度 (r=54 => 周长 339.3)
+  var circumference = 339.3;
   var ratio = config.calGoal > 0 ? Math.min(eatenCal / config.calGoal, 1) : 0;
   var ring = document.getElementById('cal-ring');
   ring.style.strokeDashoffset = circumference - ratio * circumference;
-  ring.style.stroke = isOver ? '#FB7185' : '#10B981';
+  ring.style.stroke = isOver ? 'url(#ringOverGrad)' : 'url(#ringGrad)';
 
   // 三大营养素
   document.getElementById('p-eaten').textContent = eatenP;
@@ -258,23 +294,33 @@ function renderDashboard() {
   updateMacroSubText('c-remain-text', eatenC, config.cGoal);
   updateMacroSubText('f-remain-text', eatenF, config.fGoal);
 
-  // 渲染记录列表
+  // 渲染记录列表（使用精致矢量图标代替廉价卡通 Emoji）
   var listEl = document.getElementById('meals-list');
   if (dayMeals.length === 0) {
     listEl.innerHTML =
       '<div class="empty-state">' +
-        '<span class="empty-icon">🍽️</span>' +
+        '<div class="empty-svg-box">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>' +
+            '<path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>' +
+            '<line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line>' +
+          '</svg>' +
+        '</div>' +
         '<p>' + (isToday ? '今天还没有饮食记录' : (formatChineseDate(selectedDate) + ' 暂无记录')) + '</p>' +
         '<small>支持拍照+文字混合、纯文字描述或点击右上「+ 手动快速记」补录</small>' +
       '</div>';
     return;
   }
 
-  var mealEmoji = { '早餐': '🌅', '午餐': '☀️', '晚餐': '🌙', '加餐': '🍎' };
+  var mealSvgIcon =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>' +
+    '</svg>';
+
   listEl.innerHTML = dayMeals.map(function(m) {
     var thumb = m.img
       ? '<img src="' + m.img + '" class="meal-thumb" alt="food" />'
-      : '<div class="meal-thumb">' + (mealEmoji[m.mealType] || '🥗') + '</div>';
+      : '<div class="meal-thumb">' + mealSvgIcon + '</div>';
     return (
       '<div class="meal-item">' +
         thumb +
@@ -284,10 +330,10 @@ function renderDashboard() {
             '<span class="meal-type-tag">' + esc(m.mealType || '正餐') + (m.time ? ' · ' + esc(m.time) : '') + '</span>' +
           '</div>' +
           '<div class="meal-meta">' +
-            '<span class="meal-cal">🔥 ' + Math.round(Number(m.calories) || 0) + ' kcal</span>' +
-            '<span class="meal-macro-pill">蛋白 ' + (Number(m.protein) || 0) + 'g</span>' +
-            '<span class="meal-macro-pill">碳水 ' + (Number(m.carbs) || 0) + 'g</span>' +
-            '<span class="meal-macro-pill">脂肪 ' + (Number(m.fat) || 0) + 'g</span>' +
+            '<span class="meal-cal">' + Math.round(Number(m.calories) || 0) + ' kcal</span>' +
+            '<span class="meal-macro-pill">P ' + (Number(m.protein) || 0) + 'g</span>' +
+            '<span class="meal-macro-pill">C ' + (Number(m.carbs) || 0) + 'g</span>' +
+            '<span class="meal-macro-pill">F ' + (Number(m.fat) || 0) + 'g</span>' +
           '</div>' +
         '</div>' +
         '<button class="meal-del-btn" onclick="deleteMeal(' + Number(m.id) + ')" aria-label="删除">✕</button>' +
@@ -301,10 +347,10 @@ function updateMacroSubText(id, eaten, goal) {
   if (!el) return;
   var diff = Math.round((goal - eaten) * 10) / 10;
   if (diff >= 0) {
-    el.textContent = '还差 ' + diff + 'g';
+    el.textContent = '差 ' + diff + 'g';
     el.style.color = '';
   } else {
-    el.textContent = '已超 ' + Math.abs(diff) + 'g';
+    el.textContent = '超 ' + Math.abs(diff) + 'g';
     el.style.color = '#FB7185';
   }
 }
@@ -441,7 +487,6 @@ function renderBarChart(days, byDate) {
 
 function renderMealTypeStats(filtered, totalCal) {
   var types  = ['早餐', '午餐', '晚餐', '加餐'];
-  var emojis = { '早餐': '🌅', '午餐': '☀️', '晚餐': '🌙', '加餐': '🍎' };
   var colors = { '早餐': '#38BDF8', '午餐': '#10B981', '晚餐': '#FBBF24', '加餐': '#FB7185' };
 
   var byType = {};
@@ -465,7 +510,7 @@ function renderMealTypeStats(filtered, totalCal) {
       '<div class="meal-type-row">' +
         '<div class="mt-left">' +
           '<span class="mt-dot" style="background:' + colors[t] + '"></span>' +
-          '<span class="mt-name">' + emojis[t] + ' ' + t + '</span>' +
+          '<span class="mt-name">' + t + '</span>' +
           '<span class="mt-count">' + info.count + '次 · ' + Math.round(info.cal) + ' kcal</span>' +
         '</div>' +
         '<div class="mt-right">' +
@@ -502,41 +547,43 @@ function appendQuickText(txt) {
 function handleFile(file) {
   if (!file) return;
   compressImage(file, 960, 0.80, function(base64) {
+    if (!base64) {
+      toast('图片读取失败，请换一张图片重试');
+      return;
+    }
     stagedImageBase64 = base64;
-    var pickerRow = document.getElementById('media-picker-row');
     var stagedBox = document.getElementById('staged-photo-box');
     var stagedImg = document.getElementById('staged-photo-img');
-    if (pickerRow) pickerRow.style.display = 'none';
     if (stagedImg) stagedImg.src = base64;
     if (stagedBox) stagedBox.style.display = 'flex';
-    toast('📸 照片已就绪！可继续补充文字说明，或直接点击「开始 AI 智能识别」');
+    toast('已添加照片！可继续补充说明，或点击「开始识别」');
   });
 }
 
 function clearStagedPhoto() {
   stagedImageBase64 = '';
-  var pickerRow = document.getElementById('media-picker-row');
   var stagedBox = document.getElementById('staged-photo-box');
   var stagedImg = document.getElementById('staged-photo-img');
   if (stagedImg) stagedImg.src = '';
   if (stagedBox) stagedBox.style.display = 'none';
-  if (pickerRow) pickerRow.style.display = 'flex';
 }
 
 function compressImage(file, maxWidth, quality, callback) {
   var reader = new FileReader();
+  reader.onerror = function() { callback(null); };
   reader.onload = function(e) {
     var img = new Image();
+    img.onerror = function() { callback(null); };
     img.onload = function() {
       var canvas = document.createElement('canvas');
       var w = img.width, h = img.height;
-      if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+      if (w > maxWidth || h > maxWidth) {
+        if (w > h) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+        else       { w = Math.round((w * maxWidth) / h); h = maxWidth; }
+      }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       callback(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = function() {
-      toast('图片读取失败，请换一张图片重试');
     };
     img.src = e.target.result;
   };
@@ -564,14 +611,12 @@ function tryParseDirectNutrientInput(text) {
   if (!text) return null;
   var s = text.trim();
 
-  // 如果包含明显具体菜品（除了“纯蛋白/蛋白质/碳水/脂肪/热量/卡路里/大卡/补充/摄入”之外的食物词），交由 AI 处理
   var stripped = s
     .replace(/摄入|补充|吃了|喝了|记录|记一笔|今天|早上|中午|晚上|早餐|午餐|晚餐|加餐|练后|运动后|纯|净|大概|大约|约|共|总计|一共/g, '')
     .replace(/\d+(\.\d+)?\s*(g|克|kcal|千卡|大卡|卡路里|卡)/gi, '')
     .replace(/蛋白质|蛋白|碳水化合物|碳水|糖分|脂肪|热量|能量|卡路里|大卡|千卡/g, '')
     .replace(/[，,。、＋+\-\s:：;；()（）/]/g, '');
 
-  // 若剥离数字和营养素词后仍有其它文字（如“鸡胸肉”、“牛肉面”、“蛋白粉”），则走 AI 完整识别
   if (stripped.length > 0) return null;
 
   var pMatch = s.match(/(?:蛋白质|蛋白)\s*(\d+(?:\.\d+)?)\s*(?:g|克)?|(\d+(?:\.\d+)?)\s*(?:g|克)?\s*(?:纯)?(?:蛋白质|蛋白)/i);
@@ -604,7 +649,6 @@ function tryParseDirectNutrientInput(text) {
     ingredients: [
       {
         name: title,
-        name_en: '',
         grams: grams,
         calories: cal,
         protein: Math.round(p * 10) / 10,
@@ -615,7 +659,7 @@ function tryParseDirectNutrientInput(text) {
         _src: '营养直录'
       }
     ],
-    health_tip: '已按 Atwater 标准能量系数（1g蛋白质=4kcal，1g碳水=4kcal，1g脂肪=9kcal）为您精准直录。'
+    health_tip: '已按 Atwater 能量标准（1g蛋白质=4kcal，1g碳水=4kcal，1g脂肪=9kcal）为您精准直录。'
   };
 }
 
@@ -625,11 +669,11 @@ function startRecognize() {
   var hasImg = !!stagedImageBase64;
 
   if (!hasImg && !desc) {
-    toast('请先拍照/选择餐食图片，或在输入框中填写吃了什么');
+    toast('请先拍照/选图，或在输入框中填写吃了什么');
     return;
   }
 
-  // 若无图片且是纯营养素直录（例如：“摄入纯24g蛋白质”、“30g蛋白 50g碳水”），直接秒级计算！
+  // 无图且为纯营养素描述时，毫秒级本地直录
   if (!hasImg && desc) {
     var directResult = tryParseDirectNutrientInput(desc);
     if (directResult) {
@@ -651,89 +695,186 @@ function startRecognize() {
 }
 
 // ============================================================================
-// ====== 开源项目级（fud-ai + qingheng-mobile + health-coach）AI 识别管线 ======
+// ====== 截断 JSON 自动修复解析器（彻底消灭 Unexpected end of JSON input） ======
 // ============================================================================
 
-async function analyzeFood(base64Image, desc) {
+function parseAndRepairJson(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  var s = rawText.trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  var firstBrace = s.indexOf('{');
+  if (firstBrace < 0) return null;
+  s = s.substring(firstBrace);
+
+  // 1. 尝试直接截取到最后一个 '}' 解析
+  var lastBrace = s.lastIndexOf('}');
+  if (lastBrace > 0) {
+    try {
+      return JSON.parse(s.substring(0, lastBrace + 1));
+    } catch (e) {}
+  }
+
+  // 2. 若输出被截断（例如缺少结尾的 ]} 或停在半截属性处），回退到最后一个完整对象/闭合大括号并自动补齐括号栈
+  var inStr = false;
+  var escNext = false;
+  var stack = [];
+  var lastCompleteItemEnd = -1;
+
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i);
+    if (escNext) { escNext = false; continue; }
+    if (ch === '\\') { if (inStr) escNext = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+
+    if (ch === '{' || ch === '[') {
+      stack.push(ch === '{' ? '}' : ']');
+    } else if (ch === '}' || ch === ']') {
+      if (stack.length > 0) stack.pop();
+      // 当处于 ingredients/items 数组层级（stack 长度为 2，即外层 { 和数组 [）且刚闭合一个食材对象 } 时，记录安全截断点
+      if (ch === '}' && stack.length === 2) {
+        lastCompleteItemEnd = i;
+      }
+      if (stack.length === 0) {
+        try {
+          return JSON.parse(s.substring(0, i + 1));
+        } catch (e2) {}
+      }
+    }
+  }
+
+  // 如果已经至少有一个完整的食材对象 }，直接从最后一个完整食材对象处截断并闭合 `]}`
+  if (lastCompleteItemEnd > 0) {
+    var repairedFromItem = s.substring(0, lastCompleteItemEnd + 1) + ']}';
+    try {
+      return JSON.parse(repairedFromItem);
+    } catch (e3) {}
+  }
+
+  // 通用截断修补：若在字符串内截断，先闭合引号，去掉末尾悬挂的逗号/冒号，再按 stack 逆序补齐括号
+  var candidate = s;
+  if (inStr) candidate += '"';
+  candidate = candidate.replace(/[,:\s]+$/, '');
+  var closing = '';
+  for (var k = stack.length - 1; k >= 0; k--) {
+    closing += stack[k];
+  }
+  try {
+    return JSON.parse(candidate + closing);
+  } catch (e4) {
+    return null;
+  }
+}
+
+// ============================================================================
+// ====== 与 v12 完全一致的稳定 XHR 通信结构 + 开源防幻觉营养管线 ======
+// ============================================================================
+
+function analyzeFood(base64Image, desc) {
   showLoading(true);
   var loadingTitle = document.getElementById('loading-title');
   if (loadingTitle) {
     loadingTitle.textContent = (base64Image && desc)
-      ? '正在结合照片与您的文字说明混合分析...'
-      : (base64Image ? '正在识别餐食照片与分量...' : 'AI 营养师正在解析食物与营养素...');
+      ? '正在结合照片与补充说明混合分析...'
+      : (base64Image ? '正在识别餐食照片与分量...' : 'AI 营养师正在解析营养数据...');
   }
 
-  var systemRule =
-    '你是一位拥有临床运动营养学背景的资深中国注册营养师(RD)。请分析用户的饮食输入，并严格只输出一个合法 JSON 对象（不要使用 markdown 代码块，不要输出任何额外解释）。\n' +
-    '【核心准则（必须严格遵守）】\n' +
-    '1. 最高优先级尊重用户说明：用户明确给出的克数、个数、食用比例（如"吃了一半"、"不喝汤"、"去皮"）、或者直接指定的营养素克数/热量（如"摄入纯24g蛋白质"、"一勺蛋白粉24g蛋白"），必须 100% 采纳！\n' +
-    '2. 严禁擅自添加"花生油/食用油"：绝对禁止凭空捏造或单独列出用户未提及的"花生油"、"食用油"、"植物油"、"沙拉酱"、"白砂糖"等调料条目！如果是家常炒菜或外卖，请将合理的烹调油脂直接折算在菜品本身的宏量营养素中，切勿单独拆出一项油！\n' +
-    '3. 区分"基础单一食材"与"复合熟菜/补剂/纯营养素"：\n' +
-    '   - 只有纯粹的单一基础食材（如：熟米饭、水煮蛋、生/熟鸡胸肉、纯牛奶、西兰花、香蕉、苹果、全麦面包）才将 "use_db" 设为 true，"category" 设为 "raw"。\n' +
-    '   - 对于复合菜肴/主食（如：牛肉面、番茄炒蛋、宫保鸡丁、饺子、汉堡、麻辣烫）、品牌食品、运动补剂（如：蛋白粉、乳清蛋白、增肌粉、肌酸）或纯营养素描述，必须将 "use_db" 设为 false，"category" 设为 "cooked" 或 "macro"，由你直接给出符合真实熟食/补剂状态的准确克数与营养素！\n' +
-    '4. 常见中国食物与补剂黄金锚点参考：\n' +
-    '   - 1g 蛋白质 = 4 kcal，1g 碳水化合物 = 4 kcal，1g 脂肪 = 9 kcal（每个条目的 calories 必须约等于 4*protein + 4*carbs + 9*fat）。\n' +
-    '   - 一勺标准乳清蛋白粉(约30g) ≈ 120 kcal, 蛋白质 24g, 碳水 2g, 脂肪 1.5g。\n' +
-    '   - 1个普通水煮鸡蛋(去壳约55-60g) ≈ 78 kcal, 蛋白质 6.8g, 碳水 0.6g, 脂肪 5.0g；单个鸡蛋白(约35g) ≈ 18 kcal, 蛋白质 3.8g。\n' +
-    '   - 100g 熟米饭 ≈ 116 kcal, 蛋白质 2.6g, 碳水 25.9g, 脂肪 0.3g（普通家用一碗约 150g-200g）。\n' +
-    '   - 100g 熟鸡胸肉 ≈ 165 kcal, 蛋白质 31g, 碳水 0g, 脂肪 3.6g。\n' +
-    '   - 一碗普通牛肉面(含面条、牛肉、少量汤底，可食部约400g) ≈ 520-620 kcal, 蛋白质 24-28g, 碳水 75-85g, 脂肪 12-16g。\n' +
-    '【输出 JSON 格式】\n' +
-    '{"food_name":"菜品或记录总名称","total_calories":0,"protein":0,"carbs":0,"fat":0,"ingredients":[{"name":"中文名称","name_en":"english name","grams":100,"calories":150,"protein":10,"carbs":15,"fat":5,"category":"raw|cooked|macro","use_db":false}],"health_tip":"一句简短专业的运动营养建议"}';
+  var prompt =
+    '你是专业临床营养师（熟悉中餐与运动营养）。请识别' + (base64Image ? '这张餐食照片' : '下方饮食描述') + '中的所有食物，估算每项实际入口的可食部重量（克）与营养素。\n' +
+    '严格只输出一行紧凑 JSON，不含 Markdown 代码块：\n' +
+    '{"dish_name":"总名称","items":[{"name":"食物中文名","grams":150,"kcal_guess":174,"protein_guess":4,"carbs_guess":39,"fat_guess":0.5,"raw":1}],"health_tip":"一句简短营养建议"}\n' +
+    '核心规则：\n' +
+    '1) 严禁凭空捏造或单独列出用户未提及的"花生油"、"食用油"、"植物油"等独立调料项！炒菜油脂请直接折算在菜品自身热量中。\n' +
+    '2) 若用户描述的是纯营养素或补剂（如"摄入纯24g蛋白质"、"一勺蛋白粉"），直接按 1g蛋白质=4kcal、1g碳水=4kcal、1g脂肪=9kcal 计算，并将 raw 设为 0。\n' +
+    '3) 仅当该项是单一基础食材（如熟米饭、水煮蛋、鸡胸肉、纯牛奶、西兰花、香蕉、苹果）时 raw 设为 1；若是复合菜肴（如牛肉面、番茄炒蛋、宫保鸡丁、饺子、汉堡）或补剂则 raw 设为 0。';
 
+  if (desc) {
+    prompt += '\n\n【用户说明（最高优先级，若与图片冲突或指定了分量/吃了一半/去汤/纯营养素克数，必须100%按此说明计算）】：' + desc;
+  }
+
+  // 与 v12 完全相同的消息结构：单条 user 消息，text 在前，image_url 在后，不设低 max_tokens 限制
   var userContent;
   if (base64Image) {
-    var imgPrompt = desc
-      ? ('请结合这张餐食照片与用户的补充说明进行识别。\n【用户补充说明（最高优先级）】：' + desc + '\n请输出严格符合要求的 JSON。')
-      : '请识别这张照片中的所有食物、估算每项可食部克数与营养素，并输出严格符合要求的 JSON。注意：不要单独列出花生油或食用油。';
     userContent = [
-      { type: 'image_url', image_url: { url: base64Image } },
-      { type: 'text', text: imgPrompt }
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: base64Image } }
     ];
   } else {
-    userContent = '请解析以下饮食或营养素记录：\n【用户输入】：' + desc + '\n请输出严格符合要求的 JSON。注意：若用户输入的是纯蛋白质/碳水/脂肪或蛋白粉补剂，请直接按数值或补剂标准计算，切勿生搬硬套普通食材，也绝对不要添加花生油！';
+    userContent = prompt;
   }
 
-  try {
-    var resp = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + config.apiKey
-      },
-      body: JSON.stringify({
-        model: config.model || 'deepseek-flash',
-        temperature: 0.1,
-        messages: [
-          { role: 'system', content: systemRule },
-          { role: 'user', content: userContent }
-        ],
-        max_tokens: 1200
-      })
-    });
+  var endpoint = (config.baseUrl || 'https://api.deepseek.com').replace(/\/+$/, '') + '/chat/completions';
 
-    if (!resp.ok) {
-      var errData = {};
-      try { errData = await resp.json(); } catch (e) {}
-      throw new Error((errData.error && errData.error.message) || ('API 请求失败 (' + resp.status + ')'));
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', endpoint, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('Authorization', 'Bearer ' + config.apiKey);
+  xhr.timeout = 45000;
+
+  xhr.onload = function() {
+    var parsed = null;
+    var errMsg = '';
+    try {
+      var bodyText = (xhr.responseText || '').trim();
+      if (!bodyText) {
+        errMsg = '接口返回空响应 (HTTP ' + xhr.status + ')';
+      } else {
+        var data = JSON.parse(bodyText);
+        if (data.error) {
+          errMsg = data.error.message || JSON.stringify(data.error);
+        } else if (data.choices && data.choices[0] && data.choices[0].message) {
+          var msgObj = data.choices[0].message;
+          var raw = (msgObj.content || msgObj.reasoning_content || '').trim();
+          parsed = parseAndRepairJson(raw);
+          if (!parsed) {
+            errMsg = 'AI 返回内容无法解析为 JSON';
+          }
+        } else {
+          errMsg = '接口响应异常 (HTTP ' + xhr.status + ')';
+        }
+      }
+    } catch (ex) {
+      errMsg = '响应解析失败 (HTTP ' + xhr.status + ')';
     }
 
-    var data = await resp.json();
-    var raw  = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '').trim();
-    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
-    var fb = raw.indexOf('{'), lb = raw.lastIndexOf('}');
-    if (fb >= 0 && lb > fb) raw = raw.slice(fb, lb + 1);
+    if (!parsed) {
+      showLoading(false);
+      toast('识别失败：' + (errMsg || '请重试'), 4000);
+      return;
+    }
 
-    var result = JSON.parse(raw);
+    // 归一化字段格式，兼容 items / ingredients
+    var rawItems = Array.isArray(parsed.items) ? parsed.items : (Array.isArray(parsed.ingredients) ? parsed.ingredients : []);
+    var normalized = {
+      food_name: parsed.dish_name || parsed.food_name || '饮食记录',
+      total_calories: Number(parsed.total_calories) || 0,
+      protein: Number(parsed.protein) || 0,
+      carbs: Number(parsed.carbs) || 0,
+      fat: Number(parsed.fat) || 0,
+      health_tip: parsed.health_tip || '均衡饮食，继续保持！',
+      ingredients: rawItems.map(function(it) {
+        return {
+          name: it.name || '食物',
+          grams: Number(it.grams) || 100,
+          calories: Number(it.calories != null ? it.calories : (it.kcal_guess != null ? it.kcal_guess : it.cal)) || 0,
+          protein: Number(it.protein != null ? it.protein : (it.protein_guess != null ? it.protein_guess : it.p)) || 0,
+          carbs: Number(it.carbs != null ? it.carbs : (it.carbs_guess != null ? it.carbs_guess : it.c)) || 0,
+          fat: Number(it.fat != null ? it.fat : (it.fat_guess != null ? it.fat_guess : it.f)) || 0,
+          category: it.category || (it.raw === 1 || it.use_db === true ? 'raw' : 'cooked'),
+          use_db: (it.raw === 1 || it.use_db === true)
+        };
+      })
+    };
 
-    // 二阶段：精选标准库校准 + 过滤幻觉油 + Atwater 能量守恒校验
-    await resolveNutrition(result, desc);
-    result = sanitizeAndReconcileResult(result, desc);
-
+    resolveNutrition(normalized, desc);
+    var finalResult = sanitizeAndReconcileResult(normalized, desc);
     var usedImg = base64Image || '';
-    tempMealResult = result;
+    tempMealResult = finalResult;
 
-    // 识别成功后清空工作台输入与暂存照片
     clearStagedPhoto();
     var descEl = document.getElementById('desc-input');
     if (descEl) descEl.value = '';
@@ -742,48 +883,61 @@ async function analyzeFood(base64Image, desc) {
       makeThumb(usedImg, function(thumb) {
         tempMealResult.img = thumb;
         showLoading(false);
-        showResultModal(result, usedImg);
+        showResultModal(finalResult, usedImg);
       });
     } else {
       tempMealResult.img = '';
       showLoading(false);
-      showResultModal(result, '');
+      showResultModal(finalResult, '');
     }
-  } catch (err) {
+  };
+
+  xhr.onerror = function() {
     showLoading(false);
-    toast('❌ 识别失败：' + err.message, 4200);
-  }
+    toast('网络连接失败，请检查手机网络后重试', 3800);
+  };
+
+  xhr.ontimeout = function() {
+    showLoading(false);
+    toast('AI 识别超时，请重试', 3800);
+  };
+
+  xhr.send(JSON.stringify({
+    model: config.model || 'deepseek-flash',
+    messages: [{
+      role: 'user',
+      content: userContent
+    }],
+    temperature: 0.2
+  }));
 }
 
 // ============================================================================
-// ====== 黄金标准单一食材字典 + 严格匹配 + Atwater 守恒校验 ======
+// ====== 黄金标准单一食材字典 + 严格精确匹配 + Atwater 能量守恒校验 ======
 // ============================================================================
 
-// 每 100g 可食部权威黄金标准值（避免匹配到《中国食物成分表》里的“鸡肉松”、“婴儿配方蛋白粉”等奇葩条目）
 var STANDARD_FOODS = {
   '米饭':     { kcal: 116, p: 2.6,  c: 25.9, f: 0.3 },
   '熟米饭':   { kcal: 116, p: 2.6,  c: 25.9, f: 0.3 },
   '白米饭':   { kcal: 116, p: 2.6,  c: 25.9, f: 0.3 },
   '大米饭':   { kcal: 116, p: 2.6,  c: 25.9, f: 0.3 },
   '糙米饭':   { kcal: 111, p: 2.6,  c: 23.0, f: 0.9 },
+  '三色糙米饭':{ kcal: 112, p: 2.8,  c: 23.5, f: 0.9 },
+  '紫米饭':   { kcal: 120, p: 3.0,  c: 25.5, f: 0.6 },
+  '黑米饭':   { kcal: 120, p: 3.0,  c: 25.5, f: 0.6 },
   '白粥':     { kcal: 46,  p: 1.1,  c: 9.9,  f: 0.2 },
   '大米粥':   { kcal: 46,  p: 1.1,  c: 9.9,  f: 0.2 },
   '燕麦片':   { kcal: 367, p: 15.0, c: 61.0, f: 6.7 },
-  '生燕麦片': { kcal: 367, p: 15.0, c: 61.0, f: 6.7 },
   '全麦面包': { kcal: 246, p: 9.8,  c: 44.0, f: 3.2 },
   '全麦吐司': { kcal: 246, p: 9.8,  c: 44.0, f: 3.2 },
   '白吐司':   { kcal: 275, p: 8.3,  c: 50.9, f: 4.1 },
   '馒头':     { kcal: 223, p: 7.0,  c: 47.0, f: 1.1 },
   '红薯':     { kcal: 86,  p: 1.6,  c: 20.1, f: 0.1 },
   '蒸红薯':   { kcal: 86,  p: 1.6,  c: 20.1, f: 0.1 },
-  '烤红薯':   { kcal: 102, p: 1.8,  c: 23.5, f: 0.2 },
   '紫薯':     { kcal: 82,  p: 1.8,  c: 18.5, f: 0.2 },
   '土豆':     { kcal: 77,  p: 2.0,  c: 17.2, f: 0.2 },
-  '马铃薯':   { kcal: 77,  p: 2.0,  c: 17.2, f: 0.2 },
   '玉米':     { kcal: 106, p: 4.0,  c: 22.8, f: 1.2 },
   '甜玉米':   { kcal: 106, p: 4.0,  c: 22.8, f: 1.2 },
-  '糯玉米':   { kcal: 142, p: 4.3,  c: 30.2, f: 1.4 },
-  '山药':     { kcal: 57,  p: 1.9,  c: 12.4, f: 0.2 },
   '鸡蛋':     { kcal: 144, p: 13.3, c: 1.1,  f: 8.8 },
   '水煮蛋':   { kcal: 144, p: 13.3, c: 1.1,  f: 8.8 },
   '煮鸡蛋':   { kcal: 144, p: 13.3, c: 1.1,  f: 8.8 },
@@ -798,7 +952,6 @@ var STANDARD_FOODS = {
   '鸡胸肉':   { kcal: 165, p: 31.0, c: 0.0,  f: 3.6 },
   '熟鸡胸肉': { kcal: 165, p: 31.0, c: 0.0,  f: 3.6 },
   '水煮鸡胸肉':{ kcal: 165, p: 31.0, c: 0.0,  f: 3.6 },
-  '香煎鸡胸肉':{ kcal: 185, p: 30.5, c: 0.5,  f: 6.2 },
   '生鸡胸肉': { kcal: 133, p: 24.6, c: 0.0,  f: 3.2 },
   '鸡肉':     { kcal: 167, p: 24.0, c: 0.0,  f: 7.4 },
   '去皮鸡腿': { kcal: 181, p: 24.2, c: 0.0,  f: 8.8 },
@@ -839,42 +992,44 @@ var STANDARD_FOODS = {
 function normName(s) {
   return String(s || '')
     .replace(/[\s\u3000]+/g, '')
-    .replace(/[（(][^）)]*[）)]/g, '')
+    .replace(/[（(［\[][^）)］\]]*[）)］\]]/g, '')
     .trim();
 }
 
-// 严格精确匹配（彻底废除会导致“鸡肉->鸡肉松”的 bigram 模糊匹配！）
 function lookupStandardOrExactLocal(cnName) {
   var q = normName(cnName);
   if (!q) return null;
 
-  // 1. 优先查黄金标准库
   if (STANDARD_FOODS[q]) return STANDARD_FOODS[q];
 
-  // 2. 查本地中国食物成分表，但仅限 100% 精确同名且排除深加工干扰词
   if (typeof FOOD_DB !== 'undefined' && Array.isArray(FOOD_DB)) {
     for (var i = 0; i < FOOD_DB.length; i++) {
-      var e = FOOD_DB[i];
-      if (!e.n) continue;
-      // 防止匹配到婴儿奶粉、肉松、脱水干货等异常高热条目
-      if (/婴儿|配方|肉松|脱水|干粉/.test(e.n) && !/婴儿|配方|肉松|脱水|干粉/.test(q)) continue;
-      var base = normName(e.n);
+      var r = FOOD_DB[i];
+      if (!r) continue;
+      var rawFull = Array.isArray(r) ? r[0] : r.n;
+      var kcal    = Array.isArray(r) ? r[1] : r.cal;
+      var p       = Array.isArray(r) ? r[2] : r.p;
+      var c       = Array.isArray(r) ? r[3] : r.c;
+      var f       = Array.isArray(r) ? r[4] : r.f;
+      if (!rawFull) continue;
+      if (/婴儿|配方|肉松|脱水|干粉/.test(rawFull) && !/婴儿|配方|肉松|脱水|干粉/.test(q)) continue;
+      var base = normName(rawFull);
       if (base === q) {
-        return { kcal: e.cal, p: e.p, c: e.c, f: e.f };
+        return { kcal: Number(kcal) || 0, p: Number(p) || 0, c: Number(c) || 0, f: Number(f) || 0 };
       }
     }
   }
   return null;
 }
 
-async function resolveNutrition(result, userDesc) {
+function resolveNutrition(result, userDesc) {
   var ings = Array.isArray(result.ingredients) ? result.ingredients : [];
   if (!ings.length) return;
 
   var descStr = String(userDesc || '');
   var userMentionedOil = /油/.test(descStr);
 
-  // 过滤掉 AI 违背指令擅自塞入的独立“花生油/食用油/植物油”条目
+  // 自动剥离 AI 擅自添加的独立“花生油/食用油/植物油”
   if (!userMentionedOil && ings.length > 1) {
     ings = ings.filter(function(it) {
       var n = normName(it.name);
@@ -889,7 +1044,6 @@ async function resolveNutrition(result, userDesc) {
     var cat = String(it.category || '').toLowerCase();
     var nameNorm = normName(it.name);
 
-    // 若是纯营养素、运动补剂（蛋白粉等）、复合熟菜，或者用户在文本中直接指定了营养素克数，绝不用生食表覆盖！
     var isMacroOrSupplement =
       cat === 'macro' ||
       /纯蛋白|蛋白质|碳水|脂肪|蛋白粉|乳清|增肌粉|肌酸|支链氨基酸|bcaa|鱼油|维生素/i.test(nameNorm) ||
@@ -900,7 +1054,6 @@ async function resolveNutrition(result, userDesc) {
       continue;
     }
 
-    // 仅当 AI 标注为单一基础食材 (use_db === true 或在黄金标准字典内) 时，才用权威标准库校准
     if (it.use_db === true || STANDARD_FOODS[nameNorm]) {
       var std = lookupStandardOrExactLocal(it.name);
       if (std && std.kcal > 0) {
@@ -918,7 +1071,7 @@ async function resolveNutrition(result, userDesc) {
   }
 }
 
-// ====== Atwater 能量守恒与物理合理性护栏（源自 fud-ai FoodAnalysis.kt） ======
+// ====== Atwater 能量守恒与物理合理性护栏 ======
 function sanitizeAndReconcileResult(result, userDesc) {
   if (!result || typeof result !== 'object') result = {};
   var ings = Array.isArray(result.ingredients) ? result.ingredients : [];
@@ -951,10 +1104,8 @@ function sanitizeAndReconcileResult(result, userDesc) {
     var f = Math.max(Math.round((Number(it.fat)     || 0) * 10) / 10, 0);
     var cal = Math.max(Math.round(Number(it.calories) || 0), 0);
 
-    // Atwater 能量守恒公式：4*P + 4*C + 9*F
     var macroCal = Math.round(p * 4 + c * 4 + f * 9);
     if (macroCal > 0) {
-      // 如果热量为 0 或与三大营养素换算热量偏差超过 15% 且大于 20 kcal，则以三大营养素为准自动修正
       if (cal <= 0 || (Math.abs(macroCal - cal) > Math.max(20, cal * 0.15))) {
         cal = macroCal;
       }
@@ -966,7 +1117,6 @@ function sanitizeAndReconcileResult(result, userDesc) {
     it.fat      = f;
     it.calories = cal;
 
-    // 保存基准值，供用户在弹窗中手动改克数时实时等比例缩放（qingheng-mobile scaleNutrition 模式）
     it._baseGrams = g;
     it._baseCal   = cal;
     it._baseP     = p;
@@ -1057,7 +1207,6 @@ function renderResultSummaryAndIngredients() {
   }).join('');
 }
 
-// 用户在结果弹窗修改某项食材克数时，等比例缩放该项并实时更新总热量与三大营养素
 function updateIngGrams(idx, val) {
   if (!tempMealResult || !tempMealResult.ingredients || !tempMealResult.ingredients[idx]) return;
   var it = tempMealResult.ingredients[idx];
@@ -1073,7 +1222,6 @@ function updateIngGrams(idx, val) {
   it.carbs    = Math.round((Number(it._baseC)   || 0) * factor * 10) / 10;
   it.fat      = Math.round((Number(it._baseF)   || 0) * factor * 10) / 10;
 
-  // 重新汇总整餐
   var totCal = 0, totP = 0, totC = 0, totF = 0;
   tempMealResult.ingredients.forEach(function(x) {
     totCal += Number(x.calories) || 0;
@@ -1086,7 +1234,6 @@ function updateIngGrams(idx, val) {
   tempMealResult.carbs          = Math.round(totC * 10) / 10;
   tempMealResult.fat            = Math.round(totF * 10) / 10;
 
-  // 局部更新 DOM，不打断用户正在输入的数字框焦点
   document.getElementById('res-calories').textContent = tempMealResult.total_calories;
   document.getElementById('res-protein').textContent  = tempMealResult.protein + 'g';
   document.getElementById('res-carbs').textContent    = tempMealResult.carbs + 'g';
@@ -1127,7 +1274,7 @@ function saveMeal() {
   closeResult();
   renderDashboard();
   var isToday = (selectedDate === toDateStr(new Date()));
-  toast('✅ 已记入' + (isToday ? '今日' : formatChineseDate(selectedDate)) + mealType + '！');
+  toast('已记入' + (isToday ? '今日' : formatChineseDate(selectedDate)) + mealType);
 }
 
 function deleteMeal(id) {
@@ -1215,7 +1362,7 @@ function saveManualMeal() {
   persistMeals();
   closeManualModal();
   renderDashboard();
-  toast('✅ 已手动记入 ' + formatChineseDate(selectedDate) + '！');
+  toast('已手动记入 ' + formatChineseDate(selectedDate));
 }
 
 // ============================================================================
@@ -1286,12 +1433,12 @@ function applyRecommendedGoals() {
   if (explainEl) {
     explainEl.style.display = 'block';
     explainEl.innerHTML =
-      '<b>📊 临床计算依据（ISSN 运动营养学会标准）：</b><br>' +
-      '• 基础代谢 BMR：<b>' + res.bmr + '</b> kcal ｜ 日常总消耗 TDEE：<b>' + res.tdee + '</b> kcal<br>' +
+      '<b>临床计算依据（ISSN 运动营养学会标准）：</b><br>' +
+      '• 基础代谢 BMR：<b>' + res.bmr + '</b> kcal ｜ 日常消耗 TDEE：<b>' + res.tdee + '</b> kcal<br>' +
       '• 阶段目标（' + goalLabel + '）：<b>' + res.cal + '</b> kcal<br>' +
       '• 蛋白质（' + res.pPerKg + 'g/kg）：<b>' + res.p + 'g</b> ｜ 脂肪（' + res.fatRatioPct + '%）：<b>' + res.f + 'g</b> ｜ 碳水（余量）：<b>' + res.c + 'g</b>';
   }
-  toast('✅ 已按科学公式推算目标，点击底部「保存设置」生效');
+  toast('已按科学公式推算目标，点击底部「保存设置」生效');
 }
 
 function syncCalFromMacros() {
@@ -1306,6 +1453,10 @@ function syncCalFromMacros() {
 
 function openSettings() {
   document.getElementById('input-key').value       = config.apiKey;
+  var baseInput = document.getElementById('input-base-url');
+  if (baseInput) baseInput.value = config.baseUrl || 'https://api.deepseek.com';
+  var modelInput = document.getElementById('input-model');
+  if (modelInput) modelInput.value = config.model || 'deepseek-flash';
   document.getElementById('input-usda-key').value  = config.usdaKey || '';
   document.getElementById('input-gender').value    = config.gender || 'male';
   document.getElementById('input-age').value       = config.age || 25;
@@ -1326,11 +1477,14 @@ function closeSettings() {
 
 function saveSettings() {
   var key = document.getElementById('input-key').value.trim();
-  if (!key) { toast('⚠️ 请填写 DeepSeek API Key'); return; }
+  if (!key) { toast('请填写 DeepSeek API Key'); return; }
 
   config.apiKey   = key;
+  var baseInput = document.getElementById('input-base-url');
+  config.baseUrl  = (baseInput && baseInput.value.trim()) ? baseInput.value.trim() : 'https://api.deepseek.com';
+  var modelInput = document.getElementById('input-model');
+  config.model    = (modelInput && modelInput.value.trim()) ? modelInput.value.trim() : 'deepseek-flash';
   config.usdaKey  = document.getElementById('input-usda-key').value.trim();
-  config.model    = 'deepseek-flash';
   config.gender   = document.getElementById('input-gender').value;
   config.age      = parseInt(document.getElementById('input-age').value, 10)    || 25;
   config.height   = parseFloat(document.getElementById('input-height').value)  || 175;
@@ -1350,12 +1504,11 @@ function saveSettings() {
   } catch (e) { console.error('保存设置失败:', e); }
   closeSettings();
   renderDashboard();
-  toast('✅ 设置已保存！');
+  toast('设置已保存');
 }
 
 // ====== 一键导出与恢复历史备份 ======
 function exportBackup() {
-  // 导出时剥离体积较大的 base64 缩略图，使备份文本轻巧易复制
   var cleanMeals = mealsHistory.map(function(m) {
     return {
       id: m.id,
@@ -1370,7 +1523,7 @@ function exportBackup() {
     };
   });
   var payload = JSON.stringify({
-    version: 13,
+    version: 14,
     exportedAt: new Date().toISOString(),
     config: config,
     meals: cleanMeals
@@ -1385,17 +1538,17 @@ function exportBackup() {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(payload).then(function() {
-        toast('✅ 已复制全部备份数据到剪贴板！共 ' + cleanMeals.length + ' 条记录');
+        toast('已复制全部备份数据到剪贴板！共 ' + cleanMeals.length + ' 条记录');
       }).catch(function() {
         document.execCommand('copy');
-        toast('✅ 备份已生成并选中，已复制到剪贴板！');
+        toast('备份已生成并复制到剪贴板');
       });
     } else {
       document.execCommand('copy');
-      toast('✅ 备份数据已复制到剪贴板！共 ' + cleanMeals.length + ' 条记录');
+      toast('备份数据已复制到剪贴板！共 ' + cleanMeals.length + ' 条记录');
     }
   } catch (e) {
-    toast('✅ 备份已生成在下方文本框中，长按全选复制即可保存');
+    toast('备份已生成在下方文本框中，长按全选复制即可');
   }
 }
 
@@ -1442,9 +1595,9 @@ function importBackup() {
     mealsHistory.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
     persistMeals();
     renderDashboard();
-    toast('✅ 成功恢复/合并 ' + added + ' 条饮食记录！');
+    toast('成功恢复/合并 ' + added + ' 条饮食记录');
   } catch (e) {
-    toast('❌ 备份格式解析失败，请确认粘贴的是完整的 JSON 文本');
+    toast('备份格式解析失败，请确认粘贴的是完整 JSON');
   }
 }
 

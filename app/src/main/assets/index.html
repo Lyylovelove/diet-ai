@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0B0F17" />
+  <meta name="theme-color" content="#080B11" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>DietAI · 智能饮食管家</title>
   <link rel="stylesheet" href="styles.css" />
@@ -19,119 +19,142 @@
         <div class="brand-group">
           <div class="brand-logo" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3C7.5 3 4 6.5 4 11C4 16.25 12 21 12 21C12 21 20 16.25 20 11C20 6.5 16.5 3 12 3Z" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 8V14M9 11H15" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 2.75C7.16751 2.75 3.25 6.66751 3.25 11.5C3.25 16.82 10.65 20.89 11.53 21.35C11.82 21.5 12.18 21.5 12.47 21.35C13.35 20.89 20.75 16.82 20.75 11.5C20.75 6.66751 16.8325 2.75 12 2.75Z" stroke="url(#brandGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9.5 12L11.2 13.7L14.8 10.1" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="brandGrad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#34D399"/>
+                  <stop offset="1" stop-color="#06B6D4"/>
+                </linearGradient>
+              </defs>
             </svg>
           </div>
           <div>
-            <h1 class="app-title">DietAI <span class="version-pill">PRO</span></h1>
+            <div class="title-line">
+              <h1 class="app-title">DietAI</h1>
+              <span class="version-pill">PRO</span>
+            </div>
             <p class="date-text" id="current-date">加载中...</p>
           </div>
         </div>
+
         <button class="icon-btn" id="btn-settings" onclick="openSettings()" aria-label="设置">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.8"/>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
       </header>
 
-      <!-- 日期切换与历史补录栏 -->
+      <!-- 日期切换与历史补录胶囊栏 -->
       <section class="date-switcher-bar">
-        <button class="date-nav-btn" onclick="shiftDate(-1)" aria-label="前一天">‹ 前一天</button>
+        <button class="date-nav-btn" onclick="shiftDate(-1)" aria-label="前一天">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span>前一天</span>
+        </button>
         <div class="date-center-group">
           <label class="date-picker-label" for="date-picker">
-            <span class="date-cal-icon">📅</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
             <span id="selected-date-label">今天</span>
             <input type="date" id="date-picker" onchange="pickDate(this.value)" />
           </label>
-          <button class="date-today-pill" id="btn-back-today" onclick="resetToToday()" style="display:none;">回到今天</button>
+          <button class="date-today-pill" id="btn-back-today" onclick="resetToToday()" style="display:none;">回今天</button>
         </div>
-        <button class="date-nav-btn" id="btn-next-date" onclick="shiftDate(1)" aria-label="后一天">后一天 ›</button>
+        <button class="date-nav-btn" id="btn-next-date" onclick="shiftDate(1)" aria-label="后一天">
+          <span>后一天</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
       </section>
 
-      <!-- 热量总览 + 宏量营养素融合仪表盘 -->
+      <!-- 旗舰 Bento 热量与宏量营养素座舱 -->
       <section class="hero-card">
-        <div class="hero-top-row">
+        <div class="hero-glow-orb"></div>
+
+        <!-- 对称三列式热量座舱：已摄入 | 中心流光圆环 | 目标预算 -->
+        <div class="hero-cockpit">
+          <div class="cockpit-side">
+            <span class="cockpit-tag">已摄入</span>
+            <strong class="cockpit-val" id="cal-eaten">0</strong>
+            <span class="cockpit-unit">kcal</span>
+          </div>
+
           <div class="ring-box">
-            <svg class="ring-svg" viewBox="0 0 128 128">
+            <svg class="ring-svg" viewBox="0 0 140 140">
               <defs>
                 <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stop-color="#34D399" />
-                  <stop offset="100%" stop-color="#059669" />
+                  <stop offset="55%" stop-color="#10B981" />
+                  <stop offset="100%" stop-color="#06B6D4" />
+                </linearGradient>
+                <linearGradient id="ringOverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FB7185" />
+                  <stop offset="100%" stop-color="#E11D48" />
                 </linearGradient>
               </defs>
-              <circle class="ring-bg" cx="64" cy="64" r="52" />
-              <circle class="ring-fill" id="cal-ring" cx="64" cy="64" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" />
+              <circle class="ring-track-outer" cx="70" cy="70" r="62" />
+              <circle class="ring-bg" cx="70" cy="70" r="54" />
+              <circle class="ring-fill" id="cal-ring" cx="70" cy="70" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3" />
             </svg>
             <div class="ring-center">
               <span class="ring-num" id="cal-remaining">2000</span>
-              <span class="ring-label" id="cal-status-label">还可摄入</span>
+              <span class="ring-label" id="cal-status-label">剩余千卡</span>
+              <span class="ring-pct-pill" id="cal-pct">0%</span>
             </div>
           </div>
 
-          <div class="cal-stats">
-            <div class="cal-stat-item">
-              <span class="stat-dot eaten"></span>
-              <div>
-                <p class="stat-title">已摄入热量</p>
-                <p class="stat-val"><span id="cal-eaten">0</span> <small>kcal</small></p>
-              </div>
-            </div>
-            <div class="cal-stat-item">
-              <span class="stat-dot goal"></span>
-              <div>
-                <p class="stat-title">每日目标</p>
-                <p class="stat-val"><span id="cal-goal">2000</span> <small>kcal</small></p>
-              </div>
-            </div>
-            <div class="cal-stat-item">
-              <span class="stat-dot rate"></span>
-              <div>
-                <p class="stat-title">预算进度</p>
-                <p class="stat-val"><span id="cal-pct">0%</span></p>
-              </div>
-            </div>
+          <div class="cockpit-side">
+            <span class="cockpit-tag">目标预算</span>
+            <strong class="cockpit-val" id="cal-goal">2000</strong>
+            <span class="cockpit-unit">kcal</span>
           </div>
         </div>
 
-        <div class="hero-divider"></div>
-
-        <!-- 三大营养素进度 -->
+        <!-- 三大营养素独立流光胶囊卡 -->
         <div class="macros-grid">
           <div class="macro-card protein">
-            <div class="macro-top">
+            <div class="macro-head">
               <span class="macro-name"><i class="m-dot p"></i>蛋白质</span>
-              <span class="macro-val"><b id="p-eaten">0</b><small>/<span id="p-goal">150</span>g</small></span>
+              <span class="macro-sub" id="p-remain-text">差 150g</span>
             </div>
+            <div class="macro-val"><b id="p-eaten">0</b><small> / <span id="p-goal">150</span>g</small></div>
             <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
-            <div class="macro-sub" id="p-remain-text">差 150g</div>
           </div>
+
           <div class="macro-card carbs">
-            <div class="macro-top">
+            <div class="macro-head">
               <span class="macro-name"><i class="m-dot c"></i>碳水</span>
-              <span class="macro-val"><b id="c-eaten">0</b><small>/<span id="c-goal">200</span>g</small></span>
+              <span class="macro-sub" id="c-remain-text">差 200g</span>
             </div>
+            <div class="macro-val"><b id="c-eaten">0</b><small> / <span id="c-goal">200</span>g</small></div>
             <div class="bar-bg"><div class="bar-fill" id="c-bar"></div></div>
-            <div class="macro-sub" id="c-remain-text">差 200g</div>
           </div>
+
           <div class="macro-card fat">
-            <div class="macro-top">
+            <div class="macro-head">
               <span class="macro-name"><i class="m-dot f"></i>脂肪</span>
-              <span class="macro-val"><b id="f-eaten">0</b><small>/<span id="f-goal">65</span>g</small></span>
+              <span class="macro-sub" id="f-remain-text">差 65g</span>
             </div>
+            <div class="macro-val"><b id="f-eaten">0</b><small> / <span id="f-goal">65</span>g</small></div>
             <div class="bar-bg"><div class="bar-fill" id="f-bar"></div></div>
-            <div class="macro-sub" id="f-remain-text">差 65g</div>
           </div>
         </div>
       </section>
 
-      <!-- 统一 AI 图文混合输入工作台 -->
+      <!-- 一体化多模态 AI 饮食记录工作台（ChatGPT / Cal AI 风格） -->
       <section class="composer-card">
         <div class="composer-header">
           <div class="composer-title-group">
-            <span class="ai-sparkle">✦</span>
-            <span class="composer-title">AI 智能饮食记录</span>
+            <span class="sparkle-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="#34D399"/>
+              </svg>
+            </span>
+            <span class="composer-title">AI 营养师工作台</span>
           </div>
           <span class="composer-badge">图文混合 · 纯文字 · 营养直录</span>
         </div>
@@ -140,58 +163,68 @@
         <input type="file" id="camera-input" accept="image/*" capture="environment" hidden onchange="handleFile(this.files[0]); this.value='';" />
         <input type="file" id="gallery-input" accept="image/*" hidden onchange="handleFile(this.files[0]); this.value='';" />
 
-        <!-- 未选图时的双按钮 -->
-        <div class="media-picker-row" id="media-picker-row">
-          <button type="button" class="media-btn primary-media" onclick="triggerCamera()">
-            <span class="media-btn-icon">📷</span>
-            <div class="media-btn-text">
-              <strong>拍照识餐</strong>
-              <small>拍摄餐盘自动估算</small>
+        <!-- 一体化输入坞 -->
+        <div class="composer-dock">
+          <!-- 选中照片后的内嵌式精致预览条 -->
+          <div class="staged-photo-tray" id="staged-photo-box" style="display:none;">
+            <div class="staged-thumb-wrap">
+              <img id="staged-photo-img" src="" alt="餐食预览" />
+              <button type="button" class="staged-remove-fab" onclick="clearStagedPhoto()" aria-label="移除照片">✕</button>
             </div>
-          </button>
-          <button type="button" class="media-btn" onclick="triggerGallery()">
-            <span class="media-btn-icon">🖼️</span>
-            <div class="media-btn-text">
-              <strong>相册选图</strong>
-              <small>可配文字混合分析</small>
-            </div>
-          </button>
-        </div>
-
-        <!-- 已选图时的预览条（支持图文混合输入） -->
-        <div class="staged-photo-box" id="staged-photo-box" style="display:none;">
-          <img id="staged-photo-img" src="" alt="待识别餐食图片" />
-          <div class="staged-photo-info">
-            <span class="staged-tag">📸 已添加餐食照片</span>
-            <p>可在下方补充文字说明（如：只吃了一半、去皮、少油），再点击底部识别</p>
-            <div class="staged-actions">
-              <button type="button" class="staged-mini-btn" onclick="triggerGallery()">更换照片</button>
-              <button type="button" class="staged-mini-btn danger" onclick="clearStagedPhoto()">✕ 移除照片</button>
+            <div class="staged-tray-text">
+              <div class="staged-tray-title">
+                <span class="live-dot"></span>
+                <span>已附餐食照片</span>
+                <button type="button" class="staged-reselect-link" onclick="triggerGallery()">更换</button>
+              </div>
+              <p>可在下方输入补充说明（如：只吃了一半、不喝汤、少油），或直接点击右下角开始识别</p>
             </div>
           </div>
-        </div>
 
-        <!-- 文字输入框 -->
-        <div class="composer-input-wrap">
+          <!-- 无边框沉浸式文字输入区 -->
           <textarea
             id="desc-input"
             rows="2"
-            placeholder="输入饮食或补充照片说明（例：摄入纯24g蛋白质 / 一碗牛肉面不喝汤 / 150g鸡胸肉+1个水煮蛋）"
+            placeholder="输入饮食或补充图片说明（例：摄入纯24g蛋白质 / 牛肉面吃了一半）..."
           ></textarea>
-          <!-- 快捷填入胶囊 -->
-          <div class="quick-chips-row">
-            <button type="button" class="quick-chip" onclick="appendQuickText('摄入纯24g蛋白质')">+ 纯24g蛋白质</button>
-            <button type="button" class="quick-chip" onclick="appendQuickText('一勺乳清蛋白粉(24g蛋白质)')">+ 一勺蛋白粉</button>
-            <button type="button" class="quick-chip" onclick="appendQuickText('水煮蛋1个')">+ 水煮蛋1个</button>
-            <button type="button" class="quick-chip" onclick="appendQuickText('熟米饭150g')">+ 米饭150g</button>
-            <button type="button" class="quick-chip" onclick="appendQuickText('只吃了一半')">+ 只吃了一半</button>
+
+          <!-- 底部内嵌工具栏：左侧拍照/相册，右侧主识别胶囊按钮 -->
+          <div class="composer-toolbar">
+            <div class="media-pill-group" id="media-picker-row">
+              <button type="button" class="media-pill" onclick="triggerCamera()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>拍照</span>
+              </button>
+              <button type="button" class="media-pill" onclick="triggerGallery()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>相册</span>
+              </button>
+            </div>
+
+            <button type="button" class="recognize-pill-btn" onclick="startRecognize()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="#022C22"/>
+              </svg>
+              <span>开始识别</span>
+            </button>
           </div>
         </div>
 
-        <!-- 统一触发按钮 -->
-        <button type="button" class="recognize-submit-btn" onclick="startRecognize()">
-          <span>✨ 开始 AI 智能识别</span>
-        </button>
+        <!-- 快捷词横滑胶囊栏 -->
+        <div class="quick-chips-row">
+          <button type="button" class="quick-chip" onclick="appendQuickText('摄入纯24g蛋白质')">+ 纯24g蛋白质</button>
+          <button type="button" class="quick-chip" onclick="appendQuickText('一勺乳清蛋白粉(24g蛋白质)')">+ 一勺蛋白粉</button>
+          <button type="button" class="quick-chip" onclick="appendQuickText('水煮蛋1个')">+ 水煮蛋1个</button>
+          <button type="button" class="quick-chip" onclick="appendQuickText('熟米饭150g')">+ 米饭150g</button>
+          <button type="button" class="quick-chip" onclick="appendQuickText('只吃了一半')">+ 只吃了一半</button>
+        </div>
       </section>
 
       <!-- 当日饮食记录列表 -->
@@ -199,17 +232,11 @@
         <div class="section-header">
           <h2 id="records-date-title">今日记录</h2>
           <div class="section-actions">
-            <button class="text-btn accent" onclick="openManualModal()">+ 手动快速记</button>
-            <button class="text-btn" onclick="clearToday()">清空当日</button>
+            <button class="action-link accent" onclick="openManualModal()">+ 手动快速记</button>
+            <button class="action-link" onclick="clearToday()">清空</button>
           </div>
         </div>
-        <div id="meals-list" class="meals-list">
-          <div class="empty-state">
-            <span class="empty-icon">🍽️</span>
-            <p>当日还没有饮食记录</p>
-            <small>支持拍照+文字混合、纯文字描述或直接输入营养素克数</small>
-          </div>
-        </div>
+        <div id="meals-list" class="meals-list"></div>
       </section>
 
     </div><!-- /tab-home -->
@@ -219,8 +246,8 @@
 
       <header class="top-bar">
         <div>
-          <h1 class="app-title">📊 数据分析</h1>
-          <p class="date-text">热量与宏量营养素趋势</p>
+          <h1 class="app-title">趋势统计</h1>
+          <p class="date-text">热量与宏量营养素摄入分析</p>
         </div>
       </header>
 
@@ -244,7 +271,7 @@
           <span class="stat-unit">kcal</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">累计总热量</span>
+          <span class="stat-label">累计热量</span>
           <span class="stat-num" id="s-total-cal">0</span>
           <span class="stat-unit">kcal</span>
         </div>
@@ -255,23 +282,23 @@
         </div>
       </div>
 
-      <!-- 热量达标情况 -->
+      <!-- 热量达标分布 -->
       <div class="stats-card">
-        <div class="stats-card-header">🎯 热量控制分布</div>
+        <div class="stats-card-header">热量预算控制分布</div>
         <div class="stat-goal-row">
           <div class="goal-item">
             <span class="goal-num green" id="s-on-target">0</span>
-            <span class="goal-label">✅ 达标天</span>
+            <span class="goal-label">达标天</span>
           </div>
           <div class="goal-divider"></div>
           <div class="goal-item">
             <span class="goal-num red" id="s-over">0</span>
-            <span class="goal-label">🔥 超标天</span>
+            <span class="goal-label">超标天</span>
           </div>
           <div class="goal-divider"></div>
           <div class="goal-item">
             <span class="goal-num yellow" id="s-under">0</span>
-            <span class="goal-label">📉 偏低天</span>
+            <span class="goal-label">偏低天</span>
           </div>
         </div>
       </div>
@@ -279,12 +306,12 @@
       <!-- 最高/最低热量日 -->
       <div class="stats-two-col">
         <div class="stats-card half">
-          <div class="stats-card-header">🔺 最高摄入日</div>
+          <div class="stats-card-header">最高摄入日</div>
           <div class="peak-num" id="s-max-cal">-- kcal</div>
           <div class="peak-date" id="s-max-date">暂无数据</div>
         </div>
         <div class="stats-card half">
-          <div class="stats-card-header">🔻 最低摄入日</div>
+          <div class="stats-card-header">最低摄入日</div>
           <div class="peak-num" id="s-min-cal">-- kcal</div>
           <div class="peak-date" id="s-min-date">暂无数据</div>
         </div>
@@ -292,7 +319,7 @@
 
       <!-- 日均宏量营养素 -->
       <div class="stats-card">
-        <div class="stats-card-header">🥩 日均三大营养素摄入</div>
+        <div class="stats-card-header">日均三大营养素摄入</div>
         <div class="avg-macros-grid">
           <div class="avg-macro-item">
             <div class="avg-dot protein"></div>
@@ -314,7 +341,7 @@
 
       <!-- 每日热量柱状图 -->
       <div class="stats-card">
-        <div class="stats-card-header">📈 每日热量趋势</div>
+        <div class="stats-card-header">每日热量趋势</div>
         <div id="bar-chart" class="bar-chart-container"></div>
         <div class="bar-legend">
           <span><i class="legend-dot" style="background:var(--primary)"></i>达标</span>
@@ -326,24 +353,34 @@
 
       <!-- 餐次分布 -->
       <div class="stats-card">
-        <div class="stats-card-header">🍽️ 餐次热量占比</div>
+        <div class="stats-card-header">餐次热量占比</div>
         <div id="meal-type-stats" class="meal-type-stats"></div>
       </div>
 
     </div><!-- /tab-stats -->
 
-    <!-- ==================== 底部导航栏 ==================== -->
+    <!-- ==================== 底部悬浮毛玻璃矢量导航栏 ==================== -->
     <nav class="bottom-nav">
       <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
-        <span class="nav-icon">🏠</span>
-        <span class="nav-label">记录</span>
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20V9.5z"/>
+          <path d="M9 21.5V13h6v8.5"/>
+        </svg>
+        <span class="nav-label">饮食记录</span>
       </button>
       <button class="nav-item" id="nav-stats" onclick="switchTab('stats')">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">统计</span>
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="nav-label">趋势统计</span>
       </button>
       <button class="nav-item" id="nav-settings" onclick="openSettings()">
-        <span class="nav-icon">⚙️</span>
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
         <span class="nav-label">设置与备份</span>
       </button>
     </nav>
@@ -354,27 +391,37 @@
   <div class="modal-overlay" id="modal-settings" onclick="if(event.target===this)closeSettings()">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3>⚙️ 设置、目标与数据备份</h3>
+        <h3>设置、目标与数据备份</h3>
         <button class="close-btn" onclick="closeSettings()">✕</button>
       </div>
       <div class="form-body">
         <!-- 1. API 配置 -->
         <div class="settings-section-box">
-          <div class="section-box-title">🔑 AI 接口配置</div>
+          <div class="section-box-title">AI 接口配置</div>
           <div class="form-group">
             <label>DeepSeek API Key <span class="required">*</span></label>
             <input type="password" id="input-key" placeholder="sk-xxxxxxxxxxxxxxxx" />
-            <small>密钥仅加密保存在您的手机本地，直连 DeepSeek 官方接口</small>
+            <small>密钥仅保存在手机本地，直连官方接口</small>
           </div>
-          <div class="form-group" style="margin-top:10px;">
-            <label>USDA 权威食物库 Key（可选）</label>
-            <input type="text" id="input-usda-key" placeholder="留空默认使用 DEMO_KEY + 内置标准库" />
+          <div class="profile-grid" style="margin-top:6px;">
+            <div class="form-group">
+              <label>接口地址 (默认即可)</label>
+              <input type="text" id="input-base-url" value="https://api.deepseek.com" placeholder="https://api.deepseek.com" />
+            </div>
+            <div class="form-group">
+              <label>模型名称 (默认即可)</label>
+              <input type="text" id="input-model" value="deepseek-flash" placeholder="deepseek-flash" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:4px;">
+            <label>USDA 食物库 Key（选填）</label>
+            <input type="text" id="input-usda-key" placeholder="留空默认使用内置标准库 + DEMO_KEY" />
           </div>
         </div>
 
         <!-- 2. 身体档案与科学目标计算 -->
         <div class="settings-section-box highlight-box">
-          <div class="section-box-title">📐 身体档案（智能推算每日目标）</div>
+          <div class="section-box-title">身体档案（智能推算每日目标）</div>
           <div class="profile-grid">
             <div class="form-group">
               <label>性别</label>
@@ -407,24 +454,24 @@
               <label>日常活动量</label>
               <select id="input-activity" class="styled-select">
                 <option value="1.2">久坐办公 (几乎不运动)</option>
-                <option value="1.375" selected>轻度活动 (每周运动1-3次)</option>
-                <option value="1.55">中度运动 (每周运动3-5次)</option>
+                <option value="1.375" selected>轻度活动 (每周1-3次)</option>
+                <option value="1.55">中度运动 (每周3-5次)</option>
                 <option value="1.725">高强度训练 (每周6-7次)</option>
               </select>
             </div>
           </div>
-          <button type="button" class="calc-btn" onclick="applyRecommendedGoals()">⚡ 按运动营养学公式计算目标</button>
+          <button type="button" class="calc-btn" onclick="applyRecommendedGoals()">按运动营养学公式计算推荐目标</button>
           <div id="calc-explain" class="calc-explain-box" style="display:none;"></div>
         </div>
 
         <!-- 3. 每日营养素目标 -->
         <div class="settings-section-box">
-          <div class="section-box-title">🎯 每日营养目标（可手动微调，自动换算总热量）</div>
+          <div class="section-box-title">每日营养目标（修改营养素自动换算总热量）</div>
           <div class="form-group">
             <label>每日目标总热量 (kcal)</label>
             <input type="number" id="input-cal" placeholder="2000" />
           </div>
-          <div class="profile-grid three-col" style="margin-top:10px;">
+          <div class="profile-grid three-col" style="margin-top:6px;">
             <div class="form-group">
               <label>蛋白质 (g)</label>
               <input type="number" id="input-p" placeholder="150" oninput="syncCalFromMacros()" />
@@ -442,18 +489,18 @@
 
         <!-- 4. 历史数据备份与恢复 -->
         <div class="settings-section-box">
-          <div class="section-box-title">📦 历史数据备份与跨版本迁移</div>
-          <p class="backup-desc">可将全部饮食记录与设置导出为 JSON 文本保存，或粘贴备份一键恢复（支持与现有记录智能合并）。</p>
+          <div class="section-box-title">历史数据备份与恢复</div>
+          <p class="backup-desc">可将全部饮食记录与设置导出为 JSON 备份文本，或粘贴备份一键恢复。</p>
           <div class="backup-btn-row">
-            <button type="button" class="secondary-action-btn" onclick="exportBackup()">📋 复制全部备份数据</button>
+            <button type="button" class="secondary-action-btn" onclick="exportBackup()">复制全部备份数据</button>
           </div>
           <textarea id="backup-json-input" class="backup-textarea" rows="2" placeholder="在此粘贴备份 JSON 文本以恢复历史记录..."></textarea>
-          <button type="button" class="secondary-action-btn import-btn" onclick="importBackup()">📥 粘贴恢复 / 合并历史数据</button>
+          <button type="button" class="secondary-action-btn import-btn" onclick="importBackup()">粘贴恢复 / 合并历史数据</button>
         </div>
       </div>
 
       <div class="modal-footer-sticky">
-        <button class="primary-btn" onclick="saveSettings()">💾 保存设置</button>
+        <button class="primary-btn" onclick="saveSettings()">保存设置</button>
       </div>
     </div>
   </div>
@@ -470,7 +517,7 @@
 
         <div class="result-cal-hero">
           <span class="res-num" id="res-calories">0</span>
-          <span class="res-unit">千卡 (kcal) · 满足 Atwater 能量守恒校准</span>
+          <span class="res-unit">千卡 (kcal) · Atwater 能量守恒已核验</span>
         </div>
 
         <div class="result-macros-row">
@@ -490,40 +537,39 @@
 
         <div class="ingredients-box">
           <div class="ing-box-header">
-            <h4>📋 食材与营养明细</h4>
-            <small>可直接修改克数，热量与营养素实时联动</small>
+            <h4>食材与营养明细</h4>
+            <small>直接修改克数可实时重算</small>
           </div>
           <div id="res-ingredients"></div>
         </div>
 
         <div class="health-tip-box" id="res-tip-box">
-          <span>💡</span>
           <p id="res-tip"></p>
         </div>
 
         <div class="meal-type-select">
           <label>记录餐次：</label>
           <select id="res-meal-type">
-            <option value="早餐">🌅 早餐</option>
-            <option value="午餐">☀️ 午餐</option>
-            <option value="晚餐">🌙 晚餐</option>
-            <option value="加餐">🍎 加餐 / 补剂</option>
+            <option value="早餐">早餐</option>
+            <option value="午餐">午餐</option>
+            <option value="晚餐">晚餐</option>
+            <option value="加餐">加餐 / 补剂</option>
           </select>
         </div>
       </div>
-      <button class="primary-btn" onclick="saveMeal()">✅ 确认记入饮食日志</button>
+      <button class="primary-btn" onclick="saveMeal()">确认记入饮食日志</button>
     </div>
   </div>
 
-  <!-- ==================== 手动快速记一笔弹窗（方便补录前几天数据） ==================== -->
+  <!-- ==================== 手动快速记一笔弹窗 ==================== -->
   <div class="modal-overlay" id="modal-manual" onclick="if(event.target===this)closeManualModal()">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3>✍️ 手动快速录入 / 历史补录</h3>
+        <h3>手动快速录入 / 历史补录</h3>
         <button class="close-btn" onclick="closeManualModal()">✕</button>
       </div>
       <div class="form-body">
-        <p class="settings-hint">将记入当前选中日期（<b id="manual-target-date">今天</b>）。您也可以直接把过去几天的热量和三大营养素总和补录进来。</p>
+        <p class="settings-hint">将记入当前选中日期（<b id="manual-target-date" style="color:#34D399;">今天</b>）。</p>
         <div class="form-group">
           <label>食物或餐次名称</label>
           <input type="text" id="manual-name" placeholder="例如：午餐便当 / 蛋白粉1勺 / 10月27日全天汇总" />
@@ -543,20 +589,20 @@
           </div>
         </div>
         <div class="form-group">
-          <label>总热量 (kcal) <small style="font-weight:400;color:var(--text-dim);">（填上方营养素会自动换算，也可直接手填）</small></label>
+          <label>总热量 (kcal) <small style="font-weight:400;color:var(--text-dim);">（填上方营养素自动换算，也可直接填）</small></label>
           <input type="number" id="manual-cal" placeholder="例如：500" />
         </div>
         <div class="meal-type-select">
           <label>所属餐次：</label>
           <select id="manual-meal-type">
-            <option value="早餐">🌅 早餐</option>
-            <option value="午餐" selected>☀️ 午餐</option>
-            <option value="晚餐">🌙 晚餐</option>
-            <option value="加餐">🍎 加餐 / 补剂</option>
+            <option value="早餐">早餐</option>
+            <option value="午餐" selected>午餐</option>
+            <option value="晚餐">晚餐</option>
+            <option value="加餐">加餐 / 补剂</option>
           </select>
         </div>
       </div>
-      <button class="primary-btn" onclick="saveManualMeal()">✅ 立即保存记录</button>
+      <button class="primary-btn" onclick="saveManualMeal()">立即保存记录</button>
     </div>
   </div>
 
@@ -565,7 +611,7 @@
     <div class="modal-sheet loading-sheet">
       <div class="spinner"></div>
       <h3 id="loading-title">AI 营养师正在分析...</h3>
-      <p id="loading-sub" style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">正在结合烹饪方式与 Atwater 能量守恒核验数据</p>
+      <p id="loading-sub" style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">正在结合烹饪方式与能量守恒核验营养数据</p>
     </div>
   </div>
 
