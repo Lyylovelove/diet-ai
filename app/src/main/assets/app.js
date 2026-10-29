@@ -35,12 +35,13 @@ function esc(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ====== 状态与本地存储（同时兼容 v12 diet_ai_config 与 v13/v14 diet_cfg） ======
+// ====== 状态与本地存储（同时兼容 v12 diet_ai_config 与 v13/v15 diet_cfg） ======
 var config = {
   apiKey: '',
   baseUrl: 'https://api.deepseek.com',
   usdaKey: '',
   model: 'deepseek-flash',
+  themeMode: 'system',
   gender: 'male',
   age: 25,
   height: 175,
@@ -61,25 +62,117 @@ function loadSavedConfig() {
     var c12 = raw12 ? JSON.parse(raw12) : null;
     var saved = c13 || c12;
     if (saved) {
-      config.apiKey   = saved.apiKey || (c12 && c12.apiKey) || '';
-      config.baseUrl  = saved.baseUrl || (c12 && c12.baseUrl) || 'https://api.deepseek.com';
-      config.usdaKey  = saved.usdaKey || (c12 && c12.usdaKey) || '';
-      config.model    = saved.model || (c12 && c12.model) || 'deepseek-flash';
+      config.apiKey    = saved.apiKey || (c12 && c12.apiKey) || '';
+      config.baseUrl   = saved.baseUrl || (c12 && c12.baseUrl) || 'https://api.deepseek.com';
+      config.usdaKey   = saved.usdaKey || (c12 && c12.usdaKey) || '';
+      config.model     = saved.model || (c12 && c12.model) || 'deepseek-flash';
       if (config.model === 'deepseek-chat') config.model = 'deepseek-flash';
-      config.gender   = saved.gender || 'male';
-      config.age      = Number(saved.age) || 25;
-      config.height   = Number(saved.height) || 175;
-      config.weight   = Number(saved.weight) || 70;
-      config.goalType = saved.goalType || saved.goal || 'cut';
-      config.activity = Number(saved.activity) || 1.375;
-      config.calGoal  = Number(saved.calGoal || saved.targetCalories) || 2000;
-      config.pGoal    = Number(saved.pGoal || saved.targetProtein) || 150;
-      config.cGoal    = Number(saved.cGoal || saved.targetCarbs) || 200;
-      config.fGoal    = Number(saved.fGoal || saved.targetFat) || 65;
+      config.themeMode = saved.themeMode || 'system';
+      config.gender    = saved.gender || 'male';
+      config.age       = Number(saved.age) || 25;
+      config.height    = Number(saved.height) || 175;
+      config.weight    = Number(saved.weight) || 70;
+      config.goalType  = saved.goalType || saved.goal || 'cut';
+      config.activity  = Number(saved.activity) || 1.375;
+      config.calGoal   = Number(saved.calGoal || saved.targetCalories) || 2000;
+      config.pGoal     = Number(saved.pGoal || saved.targetProtein) || 150;
+      config.cGoal     = Number(saved.cGoal || saved.targetCarbs) || 200;
+      config.fGoal     = Number(saved.fGoal || saved.targetFat) || 65;
     }
   } catch (e) { console.warn('读取配置失败:', e); }
 }
 loadSavedConfig();
+
+// ====== 主题引擎：默认跟随手机系统深浅色 + 支持手动切换 ======
+function detectSystemDark() {
+  try {
+    if (window.AndroidTheme && typeof window.AndroidTheme.isSystemDark === 'function') {
+      return !!window.AndroidTheme.isSystemDark();
+    }
+  } catch (e) {}
+  try {
+    if (window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+  } catch (e2) {}
+  return true;
+}
+
+function isEffectiveDark(overrideSysDark) {
+  var mode = config.themeMode || 'system';
+  if (mode === 'dark') return true;
+  if (mode === 'light') return false;
+  if (typeof overrideSysDark === 'boolean') return overrideSysDark;
+  return detectSystemDark();
+}
+
+function applyTheme(overrideSysDark) {
+  var isDark = isEffectiveDark(overrideSysDark);
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+  var metaEl = document.getElementById('meta-theme-color');
+  if (metaEl) metaEl.setAttribute('content', isDark ? '#070A10' : '#F4F7FB');
+
+  try {
+    if (window.AndroidTheme && typeof window.AndroidTheme.syncBars === 'function') {
+      window.AndroidTheme.syncBars(isDark);
+    }
+  } catch (e) {}
+
+  var iconWrap = document.getElementById('theme-icon-wrap');
+  var labelEl = document.getElementById('theme-mode-label');
+  var mode = config.themeMode || 'system';
+  if (labelEl) {
+    labelEl.textContent = mode === 'system' ? '随系统' : (mode === 'light' ? '浅色' : '深色');
+  }
+  if (iconWrap) {
+    if (mode === 'system') {
+      iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 7l5 5"/><path d="M12 12l4 4"/></svg>';
+    } else if (mode === 'light') {
+      iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    } else {
+      iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    }
+  }
+}
+
+window.onNativeThemeChanged = function(sysIsDark) {
+  applyTheme(!!sysIsDark);
+};
+
+try {
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) {
+      mq.addEventListener('change', function(e) { applyTheme(e.matches); });
+    } else if (mq.addListener) {
+      mq.addListener(function(e) { applyTheme(e.matches); });
+    }
+  }
+} catch (e) {}
+
+function cycleThemeMode() {
+  var cur = config.themeMode || 'system';
+  var next = cur === 'system' ? 'light' : (cur === 'light' ? 'dark' : 'system');
+  setThemeMode(next, true);
+}
+
+function setThemeMode(mode, showTip) {
+  config.themeMode = mode || 'system';
+  try { localStorage.setItem('diet_cfg', JSON.stringify(config)); } catch (e) {}
+  applyTheme();
+  var sel = document.getElementById('input-theme-mode');
+  if (sel) sel.value = config.themeMode;
+  if (showTip) {
+    var nameMap = {
+      'system': '跟随手机系统（当前为' + (isEffectiveDark() ? '深色' : '浅色') + '）',
+      'light':  '凝脂白浅色主题',
+      'dark':   '黑曜石深色主题'
+    };
+    toast('主题已切换：' + nameMap[config.themeMode]);
+  }
+}
+applyTheme();
 
 var mealsHistory = [];
 function loadSavedMeals() {
@@ -195,6 +288,7 @@ function resetToToday() {
 
 // ====== 初始化 ======
 function initApp() {
+  applyTheme();
   var now = new Date();
   var opts = { month: 'long', day: 'numeric', weekday: 'short' };
   document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', opts);
@@ -1452,6 +1546,8 @@ function syncCalFromMacros() {
 }
 
 function openSettings() {
+  var themeSel = document.getElementById('input-theme-mode');
+  if (themeSel) themeSel.value = config.themeMode || 'system';
   document.getElementById('input-key').value       = config.apiKey;
   var baseInput = document.getElementById('input-base-url');
   if (baseInput) baseInput.value = config.baseUrl || 'https://api.deepseek.com';
@@ -1479,6 +1575,8 @@ function saveSettings() {
   var key = document.getElementById('input-key').value.trim();
   if (!key) { toast('请填写 DeepSeek API Key'); return; }
 
+  var themeSel = document.getElementById('input-theme-mode');
+  if (themeSel) config.themeMode = themeSel.value || 'system';
   config.apiKey   = key;
   var baseInput = document.getElementById('input-base-url');
   config.baseUrl  = (baseInput && baseInput.value.trim()) ? baseInput.value.trim() : 'https://api.deepseek.com';

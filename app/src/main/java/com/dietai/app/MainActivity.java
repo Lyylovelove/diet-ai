@@ -3,19 +3,22 @@ package com.dietai.app;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.view.View;
+import android.view.Window;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -40,13 +43,88 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        boolean sysDark = isSystemNightMode();
+        applySystemBarsAppearance(sysDark);
+
         mWebView = new WebView(this);
+        mWebView.setBackgroundColor(sysDark ? Color.parseColor("#070A10") : Color.parseColor("#F4F7FB"));
         setContentView(mWebView);
 
         checkAndRequestPermissions();
         setupWebView();
 
         mWebView.loadUrl("file:///android_asset/index.html");
+    }
+
+    private boolean isSystemNightMode() {
+        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private void applySystemBarsAppearance(final boolean isDark) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Window window = getWindow();
+                    int bgColor = isDark ? Color.parseColor("#070A10") : Color.parseColor("#F4F7FB");
+                    window.setStatusBarColor(bgColor);
+                    window.setNavigationBarColor(bgColor);
+                    if (mWebView != null) {
+                        mWebView.setBackgroundColor(bgColor);
+                    }
+                    View decor = window.getDecorView();
+                    int flags = decor.getSystemUiVisibility();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (isDark) {
+                            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        } else {
+                            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        }
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        if (isDark) {
+                            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                        } else {
+                            flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                        }
+                    }
+                    decor.setSystemUiVisibility(flags);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        boolean isDark = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        applySystemBarsAppearance(isDark);
+        if (mWebView != null) {
+            final String js = "if(window.onNativeThemeChanged){window.onNativeThemeChanged(" + (isDark ? "true" : "false") + ");}";
+            mWebView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        mWebView.evaluateJavascript(js, null);
+                    } else {
+                        mWebView.loadUrl("javascript:" + js);
+                    }
+                }
+            });
+        }
+    }
+
+    public class AndroidThemeBridge {
+        @JavascriptInterface
+        public boolean isSystemDark() {
+            return isSystemNightMode();
+        }
+
+        @JavascriptInterface
+        public void syncBars(boolean isDark) {
+            applySystemBarsAppearance(isDark);
+        }
     }
 
     private void checkAndRequestPermissions() {
@@ -68,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDatabaseEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
 
+        mWebView.addJavascriptInterface(new AndroidThemeBridge(), "AndroidTheme");
         mWebView.setWebViewClient(new WebViewClient());
         mWebView.setWebChromeClient(new WebChromeClient() {
             @Override
