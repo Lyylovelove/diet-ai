@@ -23,6 +23,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Ensure Fixed Signing Keystore
+        run: |
+          if [ ! -f app/dietai-release.jks ]; then
+            keytool -genkeypair -v \
+              -keystore app/dietai-release.jks \
+              -alias dietai \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass dietai123456 \
+              -keypass dietai123456 \
+              -dname "CN=DietAI, OU=Mobile, O=DietAI, L=Beijing, S=Beijing, C=CN"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add app/dietai-release.jks
+            git commit -m "chore: persist fixed signing keystore for seamless APK upgrades [skip ci]" || true
+            git push || true
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -50,14 +69,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.10
-          name: DietAI Android v1.0.10
+          tag_name: v1.0.13
+          name: DietAI Android v13.0 PRO
           body: |
-            ### 🥗 DietAI 饮食卡路里助手安装包
+            ### 🥗 DietAI PRO v13.0 智能饮食管家
             
             - **文件名**：`DietAI.apk`
-            - **功能**：DeepSeek 拍照识菜、中餐热量估算、宏量营养素统计、日/周/月统计分析、离线数据记录
-            - **使用方式**：下载后发到安卓手机上直接安装即可！
+            - **更新亮点**：图文混合输入、纯营养素/蛋白粉秒级直录、杜绝花生油幻觉、Atwater能量守恒核验、历史日期切换与补录、旗舰暗色UI
           files: release-output/DietAI.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

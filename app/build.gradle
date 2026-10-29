@@ -10,17 +10,27 @@ android {
         applicationId "com.dietai.app"
         minSdk 24
         targetSdk 34
-        versionCode 12
-        versionName "12.0"
+        versionCode 13
+        versionName "13.0"
+    }
+
+    signingConfigs {
+        fixedKey {
+            storeFile file("dietai-release.jks")
+            storePassword "dietai123456"
+            keyAlias "dietai"
+            keyPassword "dietai123456"
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.fixedKey
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            applicationIdSuffix ".v12"
+            signingConfig signingConfigs.fixedKey
             debuggable true
         }
     }
