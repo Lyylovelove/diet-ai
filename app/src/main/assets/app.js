@@ -41,7 +41,7 @@ var config = {
   baseUrl: 'https://api.deepseek.com',
   usdaKey: '',
   model: 'deepseek-flash',
-  themeMode: 'system',
+  themeMode: 'marvel',
   gender: 'male',
   age: 25,
   height: 175,
@@ -67,7 +67,11 @@ function loadSavedConfig() {
       config.usdaKey   = saved.usdaKey || (c12 && c12.usdaKey) || '';
       config.model     = saved.model || (c12 && c12.model) || 'deepseek-flash';
       if (config.model === 'deepseek-chat') config.model = 'deepseek-flash';
-      config.themeMode = saved.themeMode || 'system';
+      config.themeMode = saved.themeMode || 'marvel';
+      if (!localStorage.getItem('diet_marvel_v17_1')) {
+        config.themeMode = 'marvel';
+        localStorage.setItem('diet_marvel_v17_1', '1');
+      }
       config.gender    = saved.gender || 'male';
       config.age       = Number(saved.age) || 25;
       config.height    = Number(saved.height) || 175;
@@ -99,19 +103,21 @@ function detectSystemDark() {
 }
 
 function isEffectiveDark(overrideSysDark) {
-  var mode = config.themeMode || 'system';
-  if (mode === 'dark') return true;
+  var mode = config.themeMode || 'marvel';
+  if (mode === 'marvel' || mode === 'dark') return true;
   if (mode === 'light') return false;
   if (typeof overrideSysDark === 'boolean') return overrideSysDark;
   return detectSystemDark();
 }
 
 function applyTheme(overrideSysDark) {
+  var mode = config.themeMode || 'marvel';
   var isDark = isEffectiveDark(overrideSysDark);
-  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  var attrTheme = mode === 'marvel' ? 'marvel' : (isDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', attrTheme);
 
   var metaEl = document.getElementById('meta-theme-color');
-  if (metaEl) metaEl.setAttribute('content', isDark ? '#070A10' : '#F4F7FB');
+  if (metaEl) metaEl.setAttribute('content', mode === 'marvel' ? '#09060C' : (isDark ? '#070A10' : '#F4F7FB'));
 
   try {
     if (window.AndroidTheme && typeof window.AndroidTheme.syncBars === 'function') {
@@ -121,12 +127,13 @@ function applyTheme(overrideSysDark) {
 
   var iconWrap = document.getElementById('theme-icon-wrap');
   var labelEl = document.getElementById('theme-mode-label');
-  var mode = config.themeMode || 'system';
   if (labelEl) {
-    labelEl.textContent = mode === 'system' ? '随系统' : (mode === 'light' ? '浅色' : '深色');
+    labelEl.textContent = mode === 'marvel' ? '漫威版' : (mode === 'system' ? '随系统' : (mode === 'light' ? '浅色' : '深色'));
   }
   if (iconWrap) {
-    if (mode === 'system') {
+    if (mode === 'marvel') {
+      iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+    } else if (mode === 'system') {
       iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 7l5 5"/><path d="M12 12l4 4"/></svg>';
     } else if (mode === 'light') {
       iconWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
@@ -152,19 +159,21 @@ try {
 } catch (e) {}
 
 function cycleThemeMode() {
-  var cur = config.themeMode || 'system';
-  var next = cur === 'system' ? 'light' : (cur === 'light' ? 'dark' : 'system');
+  var cur = config.themeMode || 'marvel';
+  var next = cur === 'marvel' ? 'system' : (cur === 'system' ? 'light' : (cur === 'light' ? 'dark' : 'marvel'));
   setThemeMode(next, true);
 }
 
 function setThemeMode(mode, showTip) {
-  config.themeMode = mode || 'system';
+  config.themeMode = mode || 'marvel';
   try { localStorage.setItem('diet_cfg', JSON.stringify(config)); } catch (e) {}
   applyTheme();
+  renderDashboard();
   var sel = document.getElementById('input-theme-mode');
   if (sel) sel.value = config.themeMode;
   if (showTip) {
     var nameMap = {
+      'marvel': '⚡ 漫威 17.1 特别版（斯塔克战甲红金 + 方舟反应堆 HUD）',
       'system': '跟随手机系统（当前为' + (isEffectiveDark() ? '深色' : '浅色') + '）',
       'light':  '凝脂白浅色主题',
       'dark':   '黑曜石深色主题'
@@ -375,7 +384,7 @@ function renderDashboard() {
   var ratio = config.calGoal > 0 ? Math.min(eatenCal / config.calGoal, 1) : 0;
   var ring = document.getElementById('cal-ring');
   ring.style.strokeDashoffset = circumference - ratio * circumference;
-  ring.style.stroke = isOver ? 'url(#ringOverGrad)' : 'url(#ringGrad)';
+  ring.style.stroke = isOver ? 'url(#ringOverGrad)' : ((config.themeMode || 'marvel') === 'marvel' ? 'url(#ringMarvelGrad)' : 'url(#ringGrad)');
 
   // 三大营养素
   document.getElementById('p-eaten').textContent = eatenP;
@@ -1552,7 +1561,7 @@ function syncCalFromMacros() {
 
 function populateSettingsForm() {
   var themeSel = document.getElementById('input-theme-mode');
-  if (themeSel) themeSel.value = config.themeMode || 'system';
+  if (themeSel) themeSel.value = config.themeMode || 'marvel';
   var keyEl = document.getElementById('input-key');
   if (keyEl) keyEl.value = config.apiKey || '';
   var baseInput = document.getElementById('input-base-url');
@@ -1596,7 +1605,7 @@ function saveSettings() {
   if (!key) { toast('请填写 DeepSeek API Key'); return; }
 
   var themeSel = document.getElementById('input-theme-mode');
-  if (themeSel) config.themeMode = themeSel.value || 'system';
+  if (themeSel) config.themeMode = themeSel.value || 'marvel';
   config.apiKey   = key;
   var baseInput = document.getElementById('input-base-url');
   config.baseUrl  = (baseInput && baseInput.value.trim()) ? baseInput.value.trim() : 'https://api.deepseek.com';

@@ -75,13 +75,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.17
-          name: DietAI Android v17.0 PRO
+          tag_name: v17.1
+          name: DietAI Android v17.1 (Marvel Edition)
           body: |
-            ### 🥗 DietAI PRO v17.0 智能饮食管家
+            ### ⚡ DietAI PRO v17.1 漫威特别版 (Stark Tech HUD UI)
             
             - **文件名**：`DietAI.apk`
-            - **更新亮点**：修复桌面图标显示（LAUNCHER category）、设置页改为独立底部导航页面（去除弹窗与主页设置按钮）、深浅色主题跟随系统
+            - **更新亮点**：全新漫威战甲红金 + 方舟反应堆电弧蓝 HUD 主题（支持与跟随系统/深色/浅色一键切换）
           files: release-output/DietAI.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
