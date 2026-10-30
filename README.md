@@ -46,14 +46,13 @@
 - **内置《中国食物成分表 (第6版)》与黄金标准字典**：离线内置 1,200+ 条常见中式食材与标准熟食每 100g 营养基准值（[`fooddb.js`](app/src/main/assets/fooddb.js) + `STANDARD_FOODS`），支持 **USDA FoodData Central API** 在线回退。
 - **严格精确匹配，零模糊匹配幻觉**：仅对单一基础食材（`category: "raw"`）执行精确字典映射，彻底杜绝传统二元分词模糊匹配将复合菜肴误映射至高脂食材的问题。
 - **隐形烹调油防幻觉过滤**：当用户输入非炒菜类食物（如米饭、鸡蛋、牛奶、水果、白灼/清蒸食材）且未主动提及油脂时，自动拦截并剔除大模型虚构的 `花生油 / 食用油` 条目。
-- **Atwater 能量守恒定律强校验**：对每一项食材及整餐汇总强制执行热力学能量守恒核验：
-  $$\text{Calories (kcal)} = 4 \times \text{Protein (g)} + 4 \times \text{Carbs (g)} + 9 \times \text{Fat (g)}$$
-  支持在识别结果页实时修改任意食材克数，全餐热量与三大营养素按比例毫秒级重算。
+- **Atwater 能量守恒定律强校验**：对每一项食材及整餐汇总强制执行热力学能量守恒核验（`Calories = 4 × Protein + 4 × Carbs + 9 × Fat`），支持在识别结果页实时修改任意食材克数，全餐热量与三大营养素按比例毫秒级重算。
 
 ### 3. 🧬 ISSN 运动营养学临床目标推算
-- 基于 **Mifflin-St Jeor 基础代谢方程** 计算个体 `BMR` 与日常消耗 `TDEE`：
-  $$\text{BMR}_{\text{male}} = 10W + 6.25H - 5A + 5, \quad \text{BMR}_{\text{female}} = 10W + 6.25H - 5A - 161$$
-- 结合 **国际运动营养学会 (ISSN)** 指南，按阶段目标（减脂塑形 `-400 kcal` / 保持健康体重 / 干净增肌 `+250 kcal`）与体重动态分配每公斤蛋白质（`1.6–2.0 g/kg`）、脂肪占比與碳水余量。
+- 基于 **Mifflin-St Jeor 基础代谢方程** 计算个体基础代谢 `BMR` 与日常总消耗 `TDEE`：
+  - 男性：`BMR = 10 × 体重(kg) + 6.25 × 身高(cm) - 5 × 年龄 + 5`
+  - 女性：`BMR = 10 × 体重(kg) + 6.25 × 身高(cm) - 5 × 年龄 - 161`
+- 结合 **国际运动营养学会 (ISSN)** 指南，按阶段目标（减脂塑形 `-400 kcal` / 保持健康体重 / 干净增肌 `+250 kcal`）与体重动态分配每公斤蛋白质（`1.6–2.0 g/kg`）、脂肪占比与碳水余量。
 
 ### 4. 🌓 原生级深色 / 浅色双主题自适应
 - **默认跟随手机系统（One UI / Android Dark Mode）**：通过 [`MainActivity.java`](app/src/main/java/com/dietai/app/MainActivity.java) 监听系统 `Configuration.UI_MODE_NIGHT_MASK` 变化，实时同步原生状态栏、底部导航栏与 WebView CSS 变量（**黑曜石深色 Obsidian Dark** / **凝脂白浅色 Alabaster Light**），并支持顶栏一键切换。
