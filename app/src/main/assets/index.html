@@ -44,12 +44,6 @@
             <span id="theme-icon-wrap" class="theme-icon-wrap"></span>
             <span id="theme-mode-label">随系统</span>
           </button>
-          <button class="icon-btn" id="btn-settings" onclick="openSettings()" aria-label="设置">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
         </div>
       </header>
 
@@ -366,50 +360,25 @@
 
     </div><!-- /tab-stats -->
 
-    <!-- ==================== 底部悬浮毛玻璃矢量导航栏 ==================== -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
-        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20V9.5z"/>
-          <path d="M9 21.5V13h6v8.5"/>
-        </svg>
-        <span class="nav-label">饮食记录</span>
-      </button>
-      <button class="nav-item" id="nav-stats" onclick="switchTab('stats')">
-        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
-        <span class="nav-label">趋势统计</span>
-      </button>
-      <button class="nav-item" id="nav-settings" onclick="openSettings()">
-        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        <span class="nav-label">设置与备份</span>
-      </button>
-    </nav>
+    <!-- ==================== 设置 Tab（独立全屏页面，无弹窗） ==================== -->
+    <div id="tab-settings" class="tab-page">
 
-  </div><!-- /app-container -->
+      <header class="top-bar">
+        <div>
+          <h1 class="app-title">设置与备份</h1>
+          <p class="date-text">外观主题 · 身体档案 · 营养目标 · 历史数据</p>
+        </div>
+      </header>
 
-  <!-- ==================== 设置与备份弹窗 ==================== -->
-  <div class="modal-overlay" id="modal-settings" onclick="if(event.target===this)closeSettings()">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3>设置、主题与数据备份</h3>
-        <button class="close-btn" onclick="closeSettings()">✕</button>
-      </div>
       <div class="form-body">
         <!-- 0. 外观主题模式 -->
         <div class="settings-section-box">
           <div class="section-box-title">外观主题（默认自动跟随手机系统深浅色）</div>
           <div class="form-group">
-            <select id="input-theme-mode" class="styled-select" onchange="setThemeMode(this.value)">
+            <select id="input-theme-mode" class="styled-select" onchange="setThemeMode(this.value, true)">
               <option value="system">跟随手机系统（暗色自动变暗，浅色自动变亮）</option>
               <option value="dark">固定为深色主题（黑曜石暗色）</option>
-              <option value="light">固定为浅色主题（极简纯净白）</option>
+              <option value="light">固定为浅色主题（极简凝脂白）</option>
             </select>
           </div>
         </div>
@@ -506,6 +475,8 @@
           </div>
         </div>
 
+        <button class="primary-btn" onclick="saveSettings()">保存设置</button>
+
         <!-- 4. 历史数据备份与恢复 -->
         <div class="settings-section-box">
           <div class="section-box-title">历史数据备份与恢复</div>
@@ -518,11 +489,35 @@
         </div>
       </div>
 
-      <div class="modal-footer-sticky">
-        <button class="primary-btn" onclick="saveSettings()">保存设置</button>
-      </div>
-    </div>
-  </div>
+    </div><!-- /tab-settings -->
+
+    <!-- ==================== 底部悬浮毛玻璃矢量导航栏 ==================== -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-home" onclick="switchTab('home')">
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20V9.5z"/>
+          <path d="M9 21.5V13h6v8.5"/>
+        </svg>
+        <span class="nav-label">饮食记录</span>
+      </button>
+      <button class="nav-item" id="nav-stats" onclick="switchTab('stats')">
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="nav-label">趋势统计</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+        <svg class="nav-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span class="nav-label">设置与备份</span>
+      </button>
+    </nav>
+
+  </div><!-- /app-container -->
 
   <!-- ==================== 识别结果确认与克数微调弹窗 ==================== -->
   <div class="modal-overlay" id="modal-result" onclick="if(event.target===this)closeResult()">

@@ -1314,16 +1314,20 @@ html[data-theme="light"] body {
   gap: 12px;
 }
 
+.settings-page-body {
+  padding-bottom: 12px;
+}
+
 .settings-section-box {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 13px;
+  border-radius: var(--radius-lg);
+  padding: 15px;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-direction: column;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .settings-section-box.highlight-box {
@@ -1871,8 +1875,9 @@ html[data-theme="light"] .modal-footer-sticky {
 }
 
 html[data-theme="light"] .settings-section-box {
-  background: #F8FAFC;
+  background: #FFFFFF;
   border-color: rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .settings-section-box.highlight-box {

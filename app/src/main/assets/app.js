@@ -293,8 +293,9 @@ function initApp() {
   var opts = { month: 'long', day: 'numeric', weekday: 'short' };
   document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', opts);
   selectedDate = toDateStr(now);
+  populateSettingsForm();
   renderDashboard();
-  if (!config.apiKey) setTimeout(openSettings, 450);
+  if (!config.apiKey) setTimeout(function() { switchTab('settings'); }, 350);
 }
 
 if (document.readyState === 'loading') {
@@ -307,9 +308,13 @@ if (document.readyState === 'loading') {
 function switchTab(tab) {
   document.querySelectorAll('.tab-page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('nav-' + tab).classList.add('active');
+  var pageEl = document.getElementById('tab-' + tab);
+  if (pageEl) pageEl.classList.add('active');
+  var navEl = document.getElementById('nav-' + tab);
+  if (navEl) navEl.classList.add('active');
   if (tab === 'stats') renderStats(currentStatsPeriod);
+  if (tab === 'settings') populateSettingsForm();
+  window.scrollTo(0, 0);
 }
 
 // ====== 首页渲染 ======
@@ -1545,30 +1550,45 @@ function syncCalFromMacros() {
   }
 }
 
-function openSettings() {
+function populateSettingsForm() {
   var themeSel = document.getElementById('input-theme-mode');
   if (themeSel) themeSel.value = config.themeMode || 'system';
-  document.getElementById('input-key').value       = config.apiKey;
+  var keyEl = document.getElementById('input-key');
+  if (keyEl) keyEl.value = config.apiKey || '';
   var baseInput = document.getElementById('input-base-url');
   if (baseInput) baseInput.value = config.baseUrl || 'https://api.deepseek.com';
   var modelInput = document.getElementById('input-model');
   if (modelInput) modelInput.value = config.model || 'deepseek-flash';
-  document.getElementById('input-usda-key').value  = config.usdaKey || '';
-  document.getElementById('input-gender').value    = config.gender || 'male';
-  document.getElementById('input-age').value       = config.age || 25;
-  document.getElementById('input-height').value    = config.height || 175;
-  document.getElementById('input-weight').value    = config.weight || 70;
-  document.getElementById('input-goal-type').value = config.goalType || 'cut';
-  document.getElementById('input-activity').value  = String(config.activity || 1.375);
-  document.getElementById('input-cal').value       = config.calGoal;
-  document.getElementById('input-p').value         = config.pGoal;
-  document.getElementById('input-c').value         = config.cGoal;
-  document.getElementById('input-f').value         = config.fGoal;
-  document.getElementById('modal-settings').style.display = 'flex';
+  var usdaEl = document.getElementById('input-usda-key');
+  if (usdaEl) usdaEl.value = config.usdaKey || '';
+  var genderEl = document.getElementById('input-gender');
+  if (genderEl) genderEl.value = config.gender || 'male';
+  var ageEl = document.getElementById('input-age');
+  if (ageEl) ageEl.value = config.age || 25;
+  var heightEl = document.getElementById('input-height');
+  if (heightEl) heightEl.value = config.height || 175;
+  var weightEl = document.getElementById('input-weight');
+  if (weightEl) weightEl.value = config.weight || 70;
+  var goalEl = document.getElementById('input-goal-type');
+  if (goalEl) goalEl.value = config.goalType || 'cut';
+  var actEl = document.getElementById('input-activity');
+  if (actEl) actEl.value = String(config.activity || 1.375);
+  var calEl = document.getElementById('input-cal');
+  if (calEl) calEl.value = config.calGoal;
+  var pEl = document.getElementById('input-p');
+  if (pEl) pEl.value = config.pGoal;
+  var cEl = document.getElementById('input-c');
+  if (cEl) cEl.value = config.cGoal;
+  var fEl = document.getElementById('input-f');
+  if (fEl) fEl.value = config.fGoal;
+}
+
+function openSettings() {
+  switchTab('settings');
 }
 
 function closeSettings() {
-  document.getElementById('modal-settings').style.display = 'none';
+  switchTab('home');
 }
 
 function saveSettings() {
@@ -1600,7 +1620,7 @@ function saveSettings() {
   try {
     localStorage.setItem('diet_cfg', JSON.stringify(config));
   } catch (e) { console.error('保存设置失败:', e); }
-  closeSettings();
+  applyTheme();
   renderDashboard();
   toast('设置已保存');
 }
