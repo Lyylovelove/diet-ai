@@ -1536,7 +1536,7 @@ function applyRecommendedGoals() {
   document.getElementById('input-c').value   = res.c;
   document.getElementById('input-f').value   = res.f;
 
-  var goalLabel = goalType === 'cut' ? '减脂塑形' : goalType === 'bulk' ? '增肌增重' : '保持体重';
+  var goalLabel = goalType === 'cut' ? '减脂塑形 (-400 kcal)' : goalType === 'bulk' ? '增肌增重 (+250 kcal)' : '保持健康体重';
   var explainEl = document.getElementById('calc-explain');
   if (explainEl) {
     explainEl.style.display = 'block';
@@ -1544,7 +1544,7 @@ function applyRecommendedGoals() {
       '<b>推荐目标参考：</b><br>' +
       '• 基础代谢 BMR：<b>' + res.bmr + '</b> kcal ｜ 日常消耗 TDEE：<b>' + res.tdee + '</b> kcal<br>' +
       '• 阶段目标：<b>' + res.cal + '</b> kcal · ' + goalLabel + '<br>' +
-      '• 蛋白质：<b>' + res.p + 'g</b> ｜ 脂肪：<b>' + res.f + 'g</b> ｜ 碳水：<b>' + res.c + 'g</b>';
+      '• 蛋白质 (' + res.pPerKg + 'g/kg)：<b>' + res.p + 'g</b> ｜ 脂肪 (' + res.fatRatioPct + '%)：<b>' + res.f + 'g</b> ｜ 碳水：<b>' + res.c + 'g</b>';
   }
   toast('已推算推荐目标，保存后生效');
 }
