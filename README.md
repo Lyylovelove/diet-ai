@@ -148,6 +148,7 @@ gradle assembleDebug
 
 | 版本 | 发布重点 |
 | :--- | :--- |
+| **v17.1 (Marvel Edition)** | **漫威特别版 UI 主题**：新增斯塔克战甲红金配色、方舟反应堆电弧蓝流光圆环与 `STARK BIOMETRICS` HUD 遥测顶栏，支持四模式一键切换 |
 | **v17.0 PRO** | 修复 Android 启动器 `category.LAUNCHER` 声明，完善三栏独立设置页与深浅色主题联动 |
 | **v16.0 PRO** | 移除模态设置弹窗与顶栏冗余按钮，重构「设置与备份」为底部导航栏独立全屏页面 |
 | **v15.0 PRO** | 新增 Android 原生状态栏 + WebView 双端系统深浅色自动跟随引擎与顶栏一键切换 |

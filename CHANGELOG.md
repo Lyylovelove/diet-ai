@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 
 ---
 
+## [v17.1] - 2026-10-30 (Marvel Special Edition · 漫威特别版)
+
+### Added
+- **Stark Tech HUD Theme (`data-theme="marvel"`)**: Introduced the **Marvel 17.1 Special Edition** UI theme featuring Iron Man Mark LXXXV Crimson & Titanium Gold armor cards, tactical coordinate grid background, and `STARK BIOMETRICS · MARK LXXXV` telemetry header.
+- **Arc Reactor Calorie Core**: Added a 3-stop gradient (`#FF2A36` → `#FBBF24` → `#00F0FF`) and segmented inner Arc Reactor coil ring (`ring-arc-inner`) to the central calorie gauge.
+- **4-Mode Theme Switcher**: Expanded the top-bar quick toggle and Settings selector to cycle seamlessly between `漫威版 (Marvel)`, `随系统 (System)`, `浅色 (Light)`, and `深色 (Dark)`.
+
+---
+
 ## [v1.0.17] - 2026-10-30
 
 ### Fixed
