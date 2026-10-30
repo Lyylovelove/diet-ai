@@ -69,13 +69,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.16
-          name: DietAI Android v16.0 PRO
+          tag_name: v1.0.17
+          name: DietAI Android v17.0 PRO
           body: |
-            ### 🥗 DietAI PRO v16.0 智能饮食管家
+            ### 🥗 DietAI PRO v17.0 智能饮食管家
             
             - **文件名**：`DietAI.apk`
-            - **更新亮点**：设置页改为独立底部导航页面（去除弹窗与主页设置按钮）、深浅色主题跟随系统、图文混合输入、纯营养素直录、Atwater能量守恒核验
+            - **更新亮点**：修复桌面图标显示（LAUNCHER category）、设置页改为独立底部导航页面（去除弹窗与主页设置按钮）、深浅色主题跟随系统
           files: release-output/DietAI.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
