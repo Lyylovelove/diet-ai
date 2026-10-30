@@ -1,0 +1,21 @@
+# Gradle & Android Build Artifacts
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+Thumbs.db
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Output APKs & Archives
+release-output/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Keep persistent CI signing keystore for seamless in-place APK upgrades
+!app/dietai-release.jks
