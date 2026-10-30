@@ -173,12 +173,12 @@ function setThemeMode(mode, showTip) {
   if (sel) sel.value = config.themeMode;
   if (showTip) {
     var nameMap = {
-      'marvel': '⚡ 漫威 17.1 特别版（斯塔克战甲红金 + 方舟反应堆 HUD）',
-      'system': '跟随手机系统（当前为' + (isEffectiveDark() ? '深色' : '浅色') + '）',
-      'light':  '凝脂白浅色主题',
-      'dark':   '黑曜石深色主题'
+      'marvel': '漫威特别版',
+      'system': '跟随系统',
+      'light':  '浅色模式',
+      'dark':   '深色模式'
     };
-    toast('主题已切换：' + nameMap[config.themeMode]);
+    toast('已切换至' + nameMap[config.themeMode]);
   }
 }
 applyTheme();
@@ -1536,17 +1536,17 @@ function applyRecommendedGoals() {
   document.getElementById('input-c').value   = res.c;
   document.getElementById('input-f').value   = res.f;
 
-  var goalLabel = goalType === 'cut' ? '减脂(-400kcal)' : goalType === 'bulk' ? '干净增肌(+250kcal)' : '维持体重';
+  var goalLabel = goalType === 'cut' ? '减脂塑形' : goalType === 'bulk' ? '增肌增重' : '保持体重';
   var explainEl = document.getElementById('calc-explain');
   if (explainEl) {
     explainEl.style.display = 'block';
     explainEl.innerHTML =
-      '<b>临床计算依据（ISSN 运动营养学会标准）：</b><br>' +
+      '<b>推荐目标参考：</b><br>' +
       '• 基础代谢 BMR：<b>' + res.bmr + '</b> kcal ｜ 日常消耗 TDEE：<b>' + res.tdee + '</b> kcal<br>' +
-      '• 阶段目标（' + goalLabel + '）：<b>' + res.cal + '</b> kcal<br>' +
-      '• 蛋白质（' + res.pPerKg + 'g/kg）：<b>' + res.p + 'g</b> ｜ 脂肪（' + res.fatRatioPct + '%）：<b>' + res.f + 'g</b> ｜ 碳水（余量）：<b>' + res.c + 'g</b>';
+      '• 阶段目标：<b>' + res.cal + '</b> kcal · ' + goalLabel + '<br>' +
+      '• 蛋白质：<b>' + res.p + 'g</b> ｜ 脂肪：<b>' + res.f + 'g</b> ｜ 碳水：<b>' + res.c + 'g</b>';
   }
-  toast('已按科学公式推算目标，点击底部「保存设置」生效');
+  toast('已推算推荐目标，保存后生效');
 }
 
 function syncCalFromMacros() {

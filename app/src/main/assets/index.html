@@ -193,7 +193,7 @@
                 <span>已附餐食照片</span>
                 <button type="button" class="staged-reselect-link" onclick="triggerGallery()">更换</button>
               </div>
-              <p>可在下方输入补充说明（如：只吃了一半、不喝汤、少油），或直接点击右下角开始识别</p>
+              <p>可在下方输入补充说明，或直接点击开始识别</p>
             </div>
           </div>
 
@@ -201,7 +201,7 @@
           <textarea
             id="desc-input"
             rows="2"
-            placeholder="输入饮食或补充图片说明（例：摄入纯24g蛋白质 / 牛肉面吃了一半）..."
+            placeholder="记录饮食内容或输入说明..."
           ></textarea>
 
           <!-- 底部内嵌工具栏：左侧拍照/相册，右侧主识别胶囊按钮 -->
@@ -236,7 +236,7 @@
         <!-- 快捷词横滑胶囊栏 -->
         <div class="quick-chips-row">
           <button type="button" class="quick-chip" onclick="appendQuickText('摄入纯24g蛋白质')">+ 纯24g蛋白质</button>
-          <button type="button" class="quick-chip" onclick="appendQuickText('一勺乳清蛋白粉(24g蛋白质)')">+ 一勺蛋白粉</button>
+          <button type="button" class="quick-chip" onclick="appendQuickText('一勺乳清蛋白粉')">+ 一勺蛋白粉</button>
           <button type="button" class="quick-chip" onclick="appendQuickText('水煮蛋1个')">+ 水煮蛋1个</button>
           <button type="button" class="quick-chip" onclick="appendQuickText('熟米饭150g')">+ 米饭150g</button>
           <button type="button" class="quick-chip" onclick="appendQuickText('只吃了一半')">+ 只吃了一半</button>
@@ -388,13 +388,13 @@
       <div class="form-body">
         <!-- 0. 外观主题模式 -->
         <div class="settings-section-box">
-          <div class="section-box-title">外观主题（17.1 漫威特别版 / 系统自适应）</div>
+          <div class="section-box-title">外观主题</div>
           <div class="form-group">
             <select id="input-theme-mode" class="styled-select" onchange="setThemeMode(this.value, true)">
-              <option value="marvel">⚡ 漫威特别版 17.1（斯塔克战甲红金 + 方舟反应堆 HUD）</option>
-              <option value="system">跟随手机系统（暗色自动变暗，浅色自动变亮）</option>
-              <option value="dark">固定为深色主题（黑曜石暗色）</option>
-              <option value="light">固定为浅色主题（极简凝脂白）</option>
+              <option value="marvel">漫威特别版</option>
+              <option value="system">跟随系统</option>
+              <option value="dark">深色模式</option>
+              <option value="light">浅色模式</option>
             </select>
           </div>
         </div>
@@ -405,27 +405,27 @@
           <div class="form-group">
             <label>DeepSeek API Key <span class="required">*</span></label>
             <input type="password" id="input-key" placeholder="sk-xxxxxxxxxxxxxxxx" />
-            <small>密钥仅保存在手机本地，直连官方接口</small>
+            <small>密钥保存在本地设备</small>
           </div>
           <div class="profile-grid" style="margin-top:6px;">
             <div class="form-group">
-              <label>接口地址 (默认即可)</label>
+              <label>接口地址</label>
               <input type="text" id="input-base-url" value="https://api.deepseek.com" placeholder="https://api.deepseek.com" />
             </div>
             <div class="form-group">
-              <label>模型名称 (默认即可)</label>
+              <label>模型名称</label>
               <input type="text" id="input-model" value="deepseek-flash" placeholder="deepseek-flash" />
             </div>
           </div>
           <div class="form-group" style="margin-top:4px;">
-            <label>USDA 食物库 Key（选填）</label>
-            <input type="text" id="input-usda-key" placeholder="留空默认使用内置标准库 + DEMO_KEY" />
+            <label>USDA 食物库 Key</label>
+            <input type="text" id="input-usda-key" placeholder="选填，留空使用内置库" />
           </div>
         </div>
 
         <!-- 2. 身体档案与科学目标计算 -->
         <div class="settings-section-box highlight-box">
-          <div class="section-box-title">身体档案（智能推算每日目标）</div>
+          <div class="section-box-title">身体档案</div>
           <div class="profile-grid">
             <div class="form-group">
               <label>性别</label>
@@ -449,28 +449,28 @@
             <div class="form-group">
               <label>阶段目标</label>
               <select id="input-goal-type" class="styled-select">
-                <option value="cut">减脂塑形 (-400kcal)</option>
-                <option value="maintain">保持健康体重</option>
-                <option value="bulk">干净增肌 (+250kcal)</option>
+                <option value="cut">减脂塑形</option>
+                <option value="maintain">保持体重</option>
+                <option value="bulk">增肌增重</option>
               </select>
             </div>
             <div class="form-group">
               <label>日常活动量</label>
               <select id="input-activity" class="styled-select">
-                <option value="1.2">久坐办公 (几乎不运动)</option>
-                <option value="1.375" selected>轻度活动 (每周1-3次)</option>
-                <option value="1.55">中度运动 (每周3-5次)</option>
-                <option value="1.725">高强度训练 (每周6-7次)</option>
+                <option value="1.2">久坐</option>
+                <option value="1.375" selected>轻度活动</option>
+                <option value="1.55">中度运动</option>
+                <option value="1.725">高强度训练</option>
               </select>
             </div>
           </div>
-          <button type="button" class="calc-btn" onclick="applyRecommendedGoals()">按运动营养学公式计算推荐目标</button>
+          <button type="button" class="calc-btn" onclick="applyRecommendedGoals()">推算推荐目标</button>
           <div id="calc-explain" class="calc-explain-box" style="display:none;"></div>
         </div>
 
         <!-- 3. 每日营养素目标 -->
         <div class="settings-section-box">
-          <div class="section-box-title">每日营养目标（修改营养素自动换算总热量）</div>
+          <div class="section-box-title">每日营养目标</div>
           <div class="form-group">
             <label>每日目标总热量 (kcal)</label>
             <input type="number" id="input-cal" placeholder="2000" />
@@ -547,7 +547,7 @@
 
         <div class="result-cal-hero">
           <span class="res-num" id="res-calories">0</span>
-          <span class="res-unit">千卡 (kcal) · Atwater 能量守恒已核验</span>
+          <span class="res-unit">千卡 (kcal)</span>
         </div>
 
         <div class="result-macros-row">
@@ -583,7 +583,7 @@
             <option value="早餐">早餐</option>
             <option value="午餐">午餐</option>
             <option value="晚餐">晚餐</option>
-            <option value="加餐">加餐 / 补剂</option>
+            <option value="加餐">加餐</option>
           </select>
         </div>
       </div>
@@ -595,14 +595,14 @@
   <div class="modal-overlay" id="modal-manual" onclick="if(event.target===this)closeManualModal()">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3>手动快速录入 / 历史补录</h3>
+        <h3>手动录入</h3>
         <button class="close-btn" onclick="closeManualModal()">✕</button>
       </div>
       <div class="form-body">
-        <p class="settings-hint">将记入当前选中日期（<b id="manual-target-date" style="color:var(--primary);">今天</b>）。</p>
+        <p class="settings-hint">记入日期：<b id="manual-target-date" style="color:var(--primary);">今天</b></p>
         <div class="form-group">
           <label>食物或餐次名称</label>
-          <input type="text" id="manual-name" placeholder="例如：午餐便当 / 蛋白粉1勺 / 10月27日全天汇总" />
+          <input type="text" id="manual-name" placeholder="例如：牛肉饭 / 蛋白粉" />
         </div>
         <div class="profile-grid three-col">
           <div class="form-group">
@@ -619,8 +619,8 @@
           </div>
         </div>
         <div class="form-group">
-          <label>总热量 (kcal) <small style="font-weight:400;color:var(--text-dim);">（填上方营养素自动换算，也可直接填）</small></label>
-          <input type="number" id="manual-cal" placeholder="例如：500" />
+          <label>总热量 (kcal)</label>
+          <input type="number" id="manual-cal" placeholder="自动换算或直接填写" />
         </div>
         <div class="meal-type-select">
           <label>所属餐次：</label>
@@ -628,7 +628,7 @@
             <option value="早餐">早餐</option>
             <option value="午餐" selected>午餐</option>
             <option value="晚餐">晚餐</option>
-            <option value="加餐">加餐 / 补剂</option>
+            <option value="加餐">加餐</option>
           </select>
         </div>
       </div>
